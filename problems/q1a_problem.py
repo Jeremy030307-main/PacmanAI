@@ -33,9 +33,17 @@ class q1a_problem:
 
     @log_function
     def getStartState(self):
-        "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
 
+        self.walls = self.startingGameState.getWalls()
+
+        # set the goal position for the pacman be the position of the single food
+        food = self.startingGameState.getFood()
+        for x in range(len(food)):
+            for y in range(len(food[x])):
+                if food[x][y] == True:
+                    self.goalPoint = (x,y)
+
+        return self.startingGameState.getPacmanPosition()
 
     @log_function
     def isGoalState(self, state):
