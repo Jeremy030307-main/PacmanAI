@@ -47,8 +47,8 @@ class q1a_problem:
 
     @log_function
     def isGoalState(self, state):
-        "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        # state is the position (x,y) of pacman 
+        return state == self.goalPoint
 
     @log_function
     def getSuccessors(self, state):
@@ -63,7 +63,20 @@ class q1a_problem:
          cost of expanding to that successor
         """
         # ------------------------------------------
-        "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        
+        successors = []
+
+        for action in [Directions.EAST, Directions.WEST, Directions.SOUTH, Directions.NORTH, Directions.STOP]:
+            x,y = state
+            dx, dy = Actions.directionToVector(action)  # this return (-1,0,1) which sum to the (x,y) which can determine the direction each action lead
+            next_state = (int(x+dx), int(y+dy))
+            cost = 1
+            if action == Directions.STOP:
+                cost = 0
+            
+            if not self.startingGameState.hasWall[next_state[0]][next_state[1]]:
+                successors.append( (next_state, action, cost) )
+
+
 
 
