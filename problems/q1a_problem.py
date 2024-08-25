@@ -76,6 +76,8 @@ class q1a_problem:
             
             if not self.startingGameState.hasWall[next_state[0]][next_state[1]]:
                 successors.append( (next_state, action, cost) )
+        
+        return successors
 
 
 
