@@ -6,8 +6,6 @@ import logging
 
 import util
 from problems.q1a_problem import q1a_problem
-from game import Directions
-import heapq as hq
 
 def q1a_solver(problem: q1a_problem):
     astarData = astar_initialise(problem)
@@ -23,6 +21,9 @@ def q1a_solver(problem: q1a_problem):
 #-------------------#
 # DO NOT MODIFY END #
 #-------------------#
+
+from game import Directions
+import heapq as hq
 
 class Node:
 
