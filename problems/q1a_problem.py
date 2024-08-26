@@ -68,7 +68,6 @@ class q1a_problem:
         successors = []
 
         for action in [Directions.EAST, Directions.WEST, Directions.SOUTH, Directions.NORTH, Directions.STOP]:
-            print(state)
             x,y = state
             dx, dy = Actions.directionToVector(action)  # this return (-1,0,1) which sum to the (x,y) which can determine the direction each action lead
             next_state = (int(x+dx), int(y+dy))

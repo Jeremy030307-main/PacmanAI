@@ -83,12 +83,13 @@ def astar_initialise(problem: q1a_problem):
 
 def astar_loop_body(problem: q1a_problem, astarData: AStarData):
     # YOUR CODE HERE
-    count = 0
     while len(astarData.open_list) > 0:
-        print(count)
-        # get the node with the lower f_value
-        current_node = astarData.open_list.pop()
-
+        
+        print([ (x.state, x.f) for x in astarData.open_list])
+        # get the node with the lower f_value                
+        hq.heapify(astarData.open_list)
+        current_node = astarData.open_list.pop(0)
+        print("Node Chosen", current_node.state, current_node.f)
         if current_node.visited:
             continue
 
@@ -112,7 +113,7 @@ def astar_loop_body(problem: q1a_problem, astarData: AStarData):
                 next_state_node = Node(state=next_state)
                 astarData.nodes[next_state] = next_state_node
 
-            # update the h_value, it parent node and the action from parent node to this node (also known as noe redirection)
+            # update the h_value, it parent node and the action from parent node to this node (also known as node redirection)
             if astarData.nodes[next_state].f > new_f:
                 next_state_node.f = new_f
                 next_state_node.g = new_g
@@ -123,8 +124,6 @@ def astar_loop_body(problem: q1a_problem, astarData: AStarData):
                     next_state_node.visited == False
 
                 hq.heappush(astarData.open_list, next_state_node)
-        count += 1
-        print(astarData.nodes)
 
     return astarData.terminate, []
 
