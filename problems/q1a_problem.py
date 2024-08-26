@@ -38,9 +38,10 @@ class q1a_problem:
 
         # set the goal position for the pacman be the position of the single food
         food = self.startingGameState.getFood()
-        for x in range(len(food)):
-            for y in range(len(food[x])):
-                if food[x][y] == True:
+
+        for x, food_list in enumerate(food):
+            for y, food_status in enumerate(food_list):
+                if food_status == True:
                     self.goalPoint = (x,y)
 
         return self.startingGameState.getPacmanPosition()
@@ -67,6 +68,7 @@ class q1a_problem:
         successors = []
 
         for action in [Directions.EAST, Directions.WEST, Directions.SOUTH, Directions.NORTH, Directions.STOP]:
+            print(state)
             x,y = state
             dx, dy = Actions.directionToVector(action)  # this return (-1,0,1) which sum to the (x,y) which can determine the direction each action lead
             next_state = (int(x+dx), int(y+dy))
@@ -74,7 +76,7 @@ class q1a_problem:
             if action == Directions.STOP:
                 cost = 0
             
-            if not self.startingGameState.hasWall[next_state[0]][next_state[1]]:
+            if not self.walls[next_state[0]][next_state[1]]:
                 successors.append( (next_state, action, cost) )
         
         return successors
