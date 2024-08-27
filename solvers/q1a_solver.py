@@ -14,7 +14,7 @@ def q1a_solver(problem: q1a_problem):
     while not terminate:
         num_expansions += 1
         terminate, result = astar_loop_body(problem, astarData)
-    print(f'Number of node expansions: {num_expansions}')
+    # print(f'Number of node expansions: {num_expansions}')
     return result
 
 #-------------------#
@@ -65,7 +65,8 @@ def astar_initialise(problem: q1a_problem):
     astarData = AStarData()
 
     # get the starting position of the pacman, and initialise the starting node for the position
-    start_pos = problem.getStartState()
+    problem.getStartState()
+    start_pos = problem.start_pos
     start_node = Node(state=start_pos)
     start_node.g = 0
     start_node.f = 0
@@ -85,13 +86,13 @@ def astar_loop_body(problem: q1a_problem, astarData: AStarData):
     # YOUR CODE HERE
     while len(astarData.open_list) > 0:
         
-        print([ (x.state, x.f) for x in astarData.open_list])
         # get the node with the lower f_value                
         hq.heapify(astarData.open_list)
         current_node = astarData.open_list.pop(0)
-        print("Node Chosen", current_node.state, current_node.f)
         if current_node.visited:
             continue
+
+        current_node.visited = True
 
         # check if the current position is the goal state
         if problem.isGoalState(current_node.state):

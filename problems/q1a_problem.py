@@ -44,6 +44,7 @@ class q1a_problem:
                 if food_status == True:
                     self.goalPoint = (x,y)
 
+        self.start_pos = self.startingGameState.getPacmanPosition()
         return self.startingGameState.getPacmanPosition()
 
     @log_function
