@@ -14,7 +14,7 @@ def q1a_solver(problem: q1a_problem):
     while not terminate:
         num_expansions += 1
         terminate, result = astar_loop_body(problem, astarData)
-    # print(f'Number of node expansions: {num_expansions}')
+    print(f'Number of node expansions: {num_expansions}')
     return result
 
 #-------------------#
