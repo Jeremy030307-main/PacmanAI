@@ -22,7 +22,7 @@ import time
 def q1c_solver(problem: q1c_problem):
 
     global shortest_pairs
-    shortest_pairs = allPairShortest(problem.walls)
+    # shortest_pairs = allPairShortest(problem.walls)
     startState = problem.getStartState()
     open_list = []
     closed_set = set()
@@ -67,7 +67,7 @@ def heuristic(state, problem: q1c_problem):
     
     # construct mst of the remaining dots
     x = time.time()
-    mst_cost = mst(remaining_food, problem.walls.height)
+    # mst_cost = mst(remaining_food, problem.walls.height)
     y = time.time()
     total_time += (y-x)
     print(total_time)
@@ -77,9 +77,10 @@ def heuristic(state, problem: q1c_problem):
     start = cell_to_node(pacmanPosition[0], pacmanPosition[1], problem.walls.height)
     for food_index in remaining_food:
         end = cell_to_node(food_index[0], food_index[1], problem.walls.height)
-        min_dist = min(min_dist, shortest_pairs[start][end])
+        x = util.manhattanDistance(pacmanPosition, food_index)
+        min_dist = min(min_dist, x)
    
-    return (mst_cost * 2) + min_dist + len(remaining_food) * 5
+    return + min_dist + len(remaining_food) * 5
 
 
 def reconstruct_path(parent_map, current):
