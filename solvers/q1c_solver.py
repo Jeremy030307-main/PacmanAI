@@ -66,19 +66,21 @@ def heuristic(state, problem: q1c_problem):
         return 0
     
     # construct mst of the remaining dots
+    x = time.time()
     # mst_cost = mst(remaining_food, problem.walls.height)
+    y = time.time()
+    total_time += (y-x)
+    print(total_time)
     
     # Calculate the minimum distance to the closest dot
     min_dist = float('inf')
-
     start = cell_to_node(pacmanPosition[0], pacmanPosition[1], problem.walls.height)
     for food_index in remaining_food:
         end = cell_to_node(food_index[0], food_index[1], problem.walls.height)
-
-        if shortest_pairs[start][end] < min_dist:
-            min_dist = shortest_pairs[start][end]
+        x = util.manhattanDistance(pacmanPosition, food_index)
+        min_dist = min(min_dist, x)
    
-    return min_dist + len(remaining_food) * 5
+    return + min_dist + len(remaining_food) * 5
 
 def reconstruct_path(parent_map, current):
     path = []
