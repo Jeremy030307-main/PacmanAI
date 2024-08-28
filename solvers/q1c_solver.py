@@ -22,7 +22,7 @@ import time
 def q1c_solver(problem: q1c_problem):
 
     global shortest_pairs
-    shortest_pairs = allPairShortest(problem.walls)
+    # shortest_pairs = allPairShortest(problem.walls)
     startState = problem.getStartState()
     open_list = []
     closed_set = set()
@@ -81,6 +81,7 @@ def heuristic(state, problem: q1c_problem):
         min_dist = min(min_dist, x)
    
     return + min_dist + len(remaining_food) * 5
+
 
 def reconstruct_path(parent_map, current):
     path = []
