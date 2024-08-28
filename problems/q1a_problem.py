@@ -30,22 +30,21 @@ class q1a_problem:
         goal: A position in the gameState
         """
         self.startingGameState: GameState = gameState
-
-    @log_function
-    def getStartState(self):
-
-        self.walls = self.startingGameState.getWalls()
+        self.walls = gameState.getWalls()
 
         # set the goal position for the pacman be the position of the single food
-        food = self.startingGameState.getFood()
+        food = gameState.getFood()
 
         for x, food_list in enumerate(food):
             for y, food_status in enumerate(food_list):
                 if food_status == True:
                     self.goalPoint = (x,y)
 
-        self.start_pos = self.startingGameState.getPacmanPosition()
-        return self.startingGameState.getPacmanPosition()
+        self.start_pos = gameState.getPacmanPosition()
+
+    @log_function
+    def getStartState(self):
+        return self.start_pos
 
     @log_function
     def isGoalState(self, state):
