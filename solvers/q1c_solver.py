@@ -70,9 +70,6 @@ def heuristic(state, problem: q1c_problem):
     
     # Calculate the minimum distance to the closest dot
     min_dist = float('inf')
-    max_dist = float('-inf')
-    closest_food = None
-    farthest_food = None
 
     start = cell_to_node(pacmanPosition[0], pacmanPosition[1], problem.walls.height)
     for food_index in remaining_food:
@@ -80,36 +77,8 @@ def heuristic(state, problem: q1c_problem):
 
         if shortest_pairs[start][end] < min_dist:
             min_dist = shortest_pairs[start][end]
-            closest_food = food_index
-        if shortest_pairs[start][end] > max_dist:
-            max_dist =shortest_pairs[start][end]
-            farthest_food = food_index
    
-    # return min_dist + len(remaining_food) * 5
-    
-    leftPoints = 0
-    for (x,y) in remaining_food:
-        flag = 0
-        if x!=farthest_food[0] and x!=closest_food[0]:
-            leftPoints = leftPoints + 1
-            flag = 1
-        
-        if flag == 0:
-            if y!=farthest_food[1] and y!=closest_food[1]:
-                leftPoints = leftPoints + 1
-    
-    leftPoints2 = 0
-    for (x,y) in remaining_food:
-        flag = 0
-        if x!=pacmanPosition[0] and x!=closest_food[0]:
-            leftPoints2 = leftPoints2 + 1
-            flag = 1
-        
-        if flag == 0:
-            if y!=pacmanPosition[1] and y!=closest_food[1]:
-                leftPoints2 = leftPoints2 + 1
-    
-    return min_dist + leftPoints2 + len(remaining_food) * 5
+    return min_dist + len(remaining_food) * 5
 
 def reconstruct_path(parent_map, current):
     path = []
