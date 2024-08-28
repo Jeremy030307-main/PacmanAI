@@ -106,7 +106,6 @@ def allPairShortest(wall_grid):
         for i in range(total_nodes):
             for j in range(total_nodes):
                 dist[i][j] = min(dist[i][j], dist[i][k] + dist[k][j])
-    x2 = time.time()
     return dist
 
 
