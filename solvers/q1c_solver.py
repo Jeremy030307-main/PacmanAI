@@ -6,7 +6,6 @@ import logging
 
 import util
 from problems.q1c_problem import q1c_problem
-import time
 
 #-------------------#
 # DO NOT MODIFY END #
