@@ -26,17 +26,19 @@ class q1c_problem:
         goal: A position in the gameState
         """
         self.startingGameState: GameState = gameState
+        self.startState = (gameState.getPacmanPosition(), tuple(gameState.getFood().asList()))
         self.walls = gameState.getWalls()
-        self.food = gameState.getFood().asList()
 
     @log_function
     def getStartState(self):
-        return self.startingGameState.getPacmanPosition()
+        "* YOUR CODE HERE *"
+        return self.startState
 
     @log_function
     def isGoalState(self, state):
-        # state is the a list of index that represent food in the map
-        return len(state) == 0
+        "* YOUR CODE HERE *"
+        pacmanPosition, remainingDots = state
+        return len(remainingDots) == 0
 
     @log_function
     def getSuccessors(self, state):
@@ -50,20 +52,21 @@ class q1c_problem:
          required to get there, and 'stepCost' is the incremental
          cost of expanding to that successor
         """
-        # ------------------------------------------
-        
+        "* YOUR CODE HERE *"
         successors = []
-
-        for action in [Directions.EAST, Directions.WEST, Directions.SOUTH, Directions.NORTH, Directions.STOP]:
-            x,y = state
-            dx, dy = Actions.directionToVector(action)  # this return (-1,0,1) which sum to the (x,y) which can determine the direction each action lead
-            next_state = (int(x+dx), int(y+dy))
-            cost = 1
-            if action == Directions.STOP:
-                cost = 0
+        pacmanPosition, remainingDots = state
+        
+        for action in [Directions.NORTH, Directions.SOUTH, Directions.EAST, Directions.WEST]:
+            x, y = pacmanPosition
+            dx, dy = Actions.directionToVector(action)
+            next_x, next_y = int(x + dx), int(y + dy)
             
-            if not self.walls[next_state[0]][next_state[1]]:
-                successors.append( (next_state, action, cost) )
+            if not self.walls[next_x][next_y]:
+                nextPosition = (next_x, next_y)
+                nextRemainingDots = tuple(dot for dot in remainingDots if dot != nextPosition)
+                nextState = (nextPosition, nextRemainingDots)
+                cost = 1
+                successors.append((nextState, action, cost))
         
         return successors
 
