@@ -16,9 +16,12 @@ from solvers.q1a_solver import q1a_solver
 from game import Directions
 import heapq as hq
 import util
+import time
+
 
 def q1c_solver(problem: q1c_problem):
 
+    global shortest_pairs
     shortest_pairs = allPairShortest(problem.walls)
     startState = problem.getStartState()
     open_list = []
@@ -26,10 +29,10 @@ def q1c_solver(problem: q1c_problem):
     g_costs = {startState: 0}
     parent_map = {}
 
-    hq.heappush(open_list, (heuristic(startState, problem, shortest_pairs), startState))
+    hq.heappush(open_list, (heuristic(startState, problem), startState))
     
     while open_list:
-        print("enter")
+    
         _, current = hq.heappop(open_list)
         
         if problem.isGoalState(current):
@@ -45,31 +48,39 @@ def q1c_solver(problem: q1c_problem):
             
             if successor not in g_costs or tentative_g_cost < g_costs[successor]:
                 g_costs[successor] = tentative_g_cost
-                priority = tentative_g_cost + heuristic(successor, problem, shortest_pairs)
+                priority = tentative_g_cost + heuristic(successor, problem)
                 hq.heappush(open_list, (priority, successor))
                 parent_map[successor] = (current, action)
     
     return []
 
+total_time = 0
 
-def heuristic(state, problem: q1c_problem, all_pairs_shortest):
+def heuristic(state, problem: q1c_problem):
 
+    global total_time
+    global shortest_pairs
     pacmanPosition, remaining_food = state
     
     if not remaining_food:
         return 0
     
     # construct mst of the remaining dots
-    mst_cost = mst(remaining_food, all_pairs_shortest, problem.walls.height)
+    x = time.time()
+    mst_cost = mst(remaining_food, problem.walls.height)
+    y = time.time()
+    total_time += (y-x)
+    print(total_time)
     
     # Calculate the minimum distance to the closest dot
     min_dist = float('inf')
     start = cell_to_node(pacmanPosition[0], pacmanPosition[1], problem.walls.height)
     for food_index in remaining_food:
         end = cell_to_node(food_index[0], food_index[1], problem.walls.height)
-        min_dist = min(min_dist, all_pairs_shortest[start][end])
+        min_dist = min(min_dist, shortest_pairs[start][end])
    
-    return min_dist + mst_cost 
+    return (mst_cost * 2) + min_dist + len(remaining_food) * 5
+
 
 def reconstruct_path(parent_map, current):
     path = []
@@ -83,7 +94,8 @@ def cell_to_node(x, y, height):
         return x * height + y
 
 def allPairShortest(wall_grid):
-     
+    
+    x = time.time()
     INF = float('inf')
 
     n = wall_grid.width
@@ -111,10 +123,13 @@ def allPairShortest(wall_grid):
         for i in range(total_nodes):
             for j in range(total_nodes):
                 dist[i][j] = min(dist[i][j], dist[i][k] + dist[k][j])
+    y= time.time()
+    print(y-x)
     return dist
 
-def mst(food_list: list[tuple[int]], all_pair_shortest, height):
+def mst(food_list: list[tuple[int]], height):
 
+    global shortest_pairs
     visited = [False for _ in range(len(food_list))]
     total_node = len(food_list)
     num_visited_node = 0
@@ -133,16 +148,16 @@ def mst(food_list: list[tuple[int]], all_pair_shortest, height):
                 for j in range(total_node):
                     start = cell_to_node(food_list[i][0], food_list[i][1], height)
                     end = cell_to_node(food_list[j][0], food_list[j][1], height)
-                    if ((not visited[j]) and all_pair_shortest[start][end] and all_pair_shortest[start][end] != float("inf")): 
+                    if ((not visited[j]) and shortest_pairs[start][end] and shortest_pairs[start][end] != float("inf")): 
                         # not in selected and there is an edge
-                        if minimum > all_pair_shortest[start][end]:
-                            minimum = all_pair_shortest[start][end]
+                        if minimum > shortest_pairs[start][end]:
+                            minimum = shortest_pairs[start][end]
                             x = i
                             y = j
 
         start = cell_to_node(food_list[x][0], food_list[x][1], height)
         end = cell_to_node(food_list[y][0], food_list[y][1], height)
-        cost += all_pair_shortest[start][end]
+        cost += shortest_pairs[start][end]
         visited[y] = True
         num_visited_node += 1
 
