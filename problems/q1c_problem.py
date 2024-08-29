@@ -28,6 +28,7 @@ class q1c_problem:
         self.startingGameState: GameState = gameState
         self.startState = (gameState.getPacmanPosition(), tuple(gameState.getFood().asList()))
         self.walls = gameState.getWalls()
+        self.foods = gameState.getFood()
 
     @log_function
     def getStartState(self):

@@ -17,23 +17,18 @@ from game import Directions
 import heapq as hq
 import util
 import time
+from game import Grid
 
 
 def q1c_solver(problem: q1c_problem):
 
     global shortest_pairs
-    shortest_pairs = allPairShortest(problem.walls)
+    # shortest_pairs = allPairShortest(problem.walls)
     startState = problem.getStartState()
 
-    # check of uneatable dot
-    food_pacman = list(startState[1])
-    food_pacman.insert(0,startState[0])
-    # print(food_pacman)
-    # _, visited_food = mst(food_pacman, problem.walls.height)
-
-    # new_food_remaining = tuple([startState[1][i] for i in range(len(startState[1])) if visited_food[i+1]])
-    # print(startState[1])
-    # startState = (startState[0], new_food_remaining)
+    visited_food_grid = dfs(startState[0], problem.foods, problem.walls)
+    new_food_list = set(startState[1]) - set(visited_food_grid)
+    startState = (startState[0], tuple(new_food_list))
     open_list = []
     closed_set = set()
     g_costs = {startState: 0}
@@ -81,17 +76,26 @@ def heuristic(state, problem: q1c_problem):
     # heuristic = mst(remaining_food, problem.walls.height)
 
     # Calculate the minimum distance to the closest dot
-    min_dist = float('inf')
-    start = cell_to_node(pacmanPosition[0]-1, pacmanPosition[1]-1, problem.walls.height-2)
-    for food_index in remaining_food:
-        end = cell_to_node(food_index[0]-1, food_index[1]-1, problem.walls.height-2)
-        min_dist = min(min_dist, shortest_pairs[start][end])
+    # min_dist = float('inf')
+    # start = cell_to_node(pacmanPosition[0]-1, pacmanPosition[1]-1, problem.walls.height-2)
+    # for food_index in remaining_food:
+    #     end = cell_to_node(food_index[0]-1, food_index[1]-1, problem.walls.height-2)
+    #     min_dist = min(min_dist, shortest_pairs[start][end])
    
-    y = time.time()
-    print(y-x)
-    heuristic += min_dist  
-    # return  heuristic + len(remaining_food) * ((problem.walls.height + problem.walls.width) / 2)
-    return heuristic + len(remaining_food) * 5
+    # y = time.time()
+    # print(y-x)
+    # heuristic += min_dist  
+    # # return  heuristic + len(remaining_food) * ((problem.walls.height + problem.walls.width) / 2)
+    # return heuristic + len(remaining_food) * 5
+
+    min_dist = float('inf')
+    start = cell_to_node(pacmanPosition[0], pacmanPosition[1], problem.walls.height)
+    for food_index in remaining_food:
+        end = cell_to_node(food_index[0], food_index[1], problem.walls.height)
+        x = util.manhattanDistance(pacmanPosition, food_index)
+        min_dist = min(min_dist, x)
+   
+    return + min_dist + len(remaining_food) * 5
 
 
 def reconstruct_path(parent_map, current):
@@ -174,3 +178,30 @@ def mst(food_list: list[tuple[int]], height):
         num_visited_node += 1
 
     return cost, visited
+
+def dfs(start_pos: tuple[int], foodGrid: Grid, wallGrid):
+
+    height = foodGrid.height
+    width = foodGrid.width
+
+    visited = [[False for _ in range(height)] for _ in range(width)]
+
+    def bridgeUtil(position, visited):
+
+        x,y = position
+        # Mark the current node as visited and print it
+        foodGrid[x][y] = False
+        visited[x][y] = True
+
+        all_directions = [(0,1), (1,0), (-1,0), (0,-1)]
+
+        for direction in all_directions:
+            next_x = x + direction[0]
+            next_y = y + direction[1]
+
+            if visited[next_x][next_y] == False and not wallGrid[next_x][next_y]:
+                bridgeUtil((next_x, next_y), visited)
+
+    bridgeUtil(start_pos, visited)
+
+    return foodGrid.asList()
