@@ -28,12 +28,12 @@ def q1c_solver(problem: q1c_problem):
     # check of uneatable dot
     food_pacman = list(startState[1])
     food_pacman.insert(0,startState[0])
-    print(food_pacman)
-    _, visited_food = mst(food_pacman, problem.walls.height)
+    # print(food_pacman)
+    # _, visited_food = mst(food_pacman, problem.walls.height)
 
-    new_food_remaining = tuple([startState[1][i] for i in range(len(startState[1])) if visited_food[i+1]])
-    print(startState[1])
-    startState = (startState[0], new_food_remaining)
+    # new_food_remaining = tuple([startState[1][i] for i in range(len(startState[1])) if visited_food[i+1]])
+    # print(startState[1])
+    # startState = (startState[0], new_food_remaining)
     open_list = []
     closed_set = set()
     g_costs = {startState: 0}
