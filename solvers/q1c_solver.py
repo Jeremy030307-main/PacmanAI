@@ -125,7 +125,8 @@ def q1c_solver(problem: q1c_problem):
                     paths = new_path
                     improvement = True
                     break  # Exit the inner loop
-                if time.time() - start > 9.99:
+
+                if time.time() - start > 9.8:
                     return action_paths
             if improvement:
                 break  # Exit the outer loop
