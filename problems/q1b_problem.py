@@ -26,27 +26,24 @@ class q1b_problem:
         goal: A position in the gameState
         """
         self.startingGameState: GameState = gameState
+        self.walls = gameState.getWalls()
+        self.goalPoints = gameState.getFood().asList()
+        self.start_pos = gameState.getPacmanPosition()
+
 
     @log_function
     def getStartState(self):
-
-        self.walls = self.startingGameState.getWalls()
-        self.goalPoints = []
-        
-        # set the goal position for the pacman be the position of the single food
-        food = self.startingGameState.getFood()
-
-        for x, food_list in enumerate(food):
-            for y, food_status in enumerate(food_list):
-                if food_status == True:
-                    self.goalPoints.append((x,y))
-
-        return self.startingGameState.getPacmanPosition()
+        return self.start_pos
 
     @log_function
     def isGoalState(self, state):
         # state is the position (x,y) of pacman 
-        return state in self.goalPoints
+        if state in self.goalPoints:
+            self.goalPoints.remove(state)
+            self.start_pos = state
+            return True
+        else:
+            return False
 
     @log_function
     def getSuccessors(self, state):
