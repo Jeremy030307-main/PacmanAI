@@ -19,106 +19,172 @@ import util
 import time
 from game import Grid
 
-
 def q1c_solver(problem: q1c_problem):
+    timeout = 10
+    astarData = astar_initialise(problem)
+    num_expansions = 0
+    terminate = False
+    start_time = time.time()
+    while not terminate:
+        elapsed_time = time.time()- start_time
+        print(elapsed_time)
+        if elapsed_time > timeout - 0.5:
+            current_node = astarData.open_list.pop(0)
+            actions = action_reconstruct(astarData, current_node)
+            terminate = True
+        num_expansions += 1
+        terminate, result = astar_loop_body(problem, astarData, timeout, start_time)
+    print(f'Number of node expansions: {num_expansions}')
+    return result
 
-    global shortest_pairs
-    # shortest_pairs = allPairShortest(problem.walls)
-    startState = problem.getStartState()
+class Node:
 
-    # test = dfs(startState[0], problem.foods, problem.walls)
-    visited_food_grid = dfs(startState[0], problem.foods, problem.walls)
-    new_food_list = set(startState[1]) - set(visited_food_grid)
-    startState = (startState[0], tuple(new_food_list))
-    open_list = []
-    closed_set = set()
-    g_costs = {startState: 0}
-    parent_map = {}
+    def __init__(self, state: tuple[tuple[int, int],tuple[tuple[int, int]]]) -> None:
 
-    hq.heappush(open_list, (heuristic(startState, problem), startState))
+        self.state = state
+        self.position = state[0]
+        self.food_remaining = state[1]
+        self.g: int = float('inf')
+        self.f: int = float('inf')
+        self.parent: Node = None
+        self.actionTaken: Directions = None
+        self.visited = False
+
+    def __eq__(self, value: 'Node') -> bool:
+        return (self.f, self.state) == (value.f, value.state)
+
+    def __ne__(self, value: 'Node') -> bool:
+        return (self.f, self.state) != (value.f, value.state)
+
+    def __lt__(self, value: 'Node'): 
+        return (self.f, self.state) < (value.f, value.state)
     
-    while open_list:
+    def __gt__(self, value: 'Node'): 
+        return (self.f, self.state) > (value.f, value.state)
     
-        _, current = hq.heappop(open_list)
+    def __ge__(self, value: 'Node'): 
+        return (self.f, self.state) >= (value.f, value.state)
+    
+    def __le__(self, value: 'Node'): 
+        return (self.f, self.state) <= (value.f, value.state)
+
+class AStarData:
+    # YOUR CODE HERE
+    def __init__(self):
+        self.total_food = 0
+        self.open_list: list[Node] = []
+        self.nodes: dict[tuple, Node] = {}
+        self.terminate = False
+        self.treshold = None
+        self.visited:list[Node] = []
+
+def astar_initialise(problem: q1c_problem):
+
+    # YOUR CODE HERE
+    astarData = AStarData()
+
+    # get the starting position of the pacman, and initialise the starting node for the position
+    start_state = problem.getStartState()
+
+    # run a dfs on the entire maze to identify unreachable food dot
+    visited_food_grid = dfs(start_state[0], problem.foods, problem.walls)
+    valid_food_list = set(start_state[1]) - set(visited_food_grid)
+    start_state = (start_state[0], tuple(valid_food_list))
+
+    # update the initial food dot available on the maze
+    astarData.total_food = len(valid_food_list)
+
+    # create the start node
+    start_node = Node(start_state)
+    start_node.g = 0
+    start_node.f = heuristic(start_state, problem)
+    start_node.parent = start_node
+    astarData.nodes[start_state] = start_node
+
+    # set the initial threshold value as 0
+    astarData.treshold = 0
+
+    hq.heappush(astarData.open_list, start_node)
+    hq.heappush(astarData.visited, start_node)
+
+    return astarData    
+
+def astar_loop_body(problem: q1c_problem, astarData: AStarData, timeout ,start_time):
+
+    lowest_visited_node: Node = astarData.visited.pop(0)
+    astarData.treshold = (astarData.total_food - len(lowest_visited_node.food_remaining)) * 10 - lowest_visited_node.g
+    hq.heappush(astarData.open_list, lowest_visited_node)
+
+    while len(astarData.open_list) > 0:
+        elapsed_time = time.time() - start_time
+
+        # get the node with the lower f_value                
+        hq.heapify(astarData.open_list)
+        current_node = astarData.open_list.pop(0)
+
+        # check if the current position is the goal state
+        if problem.isGoalState((current_node.position, current_node.food_remaining)) or elapsed_time > timeout - 0.1:
+            actions = action_reconstruct(astarData, current_node)
+            astarData.terminate = True
+            return astarData.terminate, actions
         
-        if problem.isGoalState(current):
-            return reconstruct_path(parent_map, current)
-        
-        if current in closed_set:
+        if current_node.visited:
             continue
-        
-        closed_set.add(current)
-        
-        for successor, action, stepCost in problem.getSuccessors(current):
-            tentative_g_cost = g_costs[current] + stepCost
-            
-            if successor not in g_costs or tentative_g_cost < g_costs[successor]:
-                g_costs[successor] = tentative_g_cost
-                priority = tentative_g_cost + heuristic(successor, problem)
-                hq.heappush(open_list, (priority, successor))
-                parent_map[successor] = (current, action)
-    
-    return []
 
-total_time = 0
+        current_node.visited = True
 
-# def heuristic(state, problem: q1c_problem):
+        for next_state, action, cost in problem.getSuccessors((current_node.position, current_node.food_remaining)):
 
-#     global total_time
-#     global shortest_pairs
-#     pacmanPosition, remaining_food = state
-    
-#     if not remaining_food:
-#         return 0
-    
-#     x = time.time()
-#     heuristic = 0
+            # computer the new g_value, h_value and f_value
+            new_g = current_node.g + cost
+            new_h = heuristic(next_state, problem)
+            new_f = new_g + new_h
 
-#     min_dist = float('inf')
-#     start = cell_to_node(pacmanPosition[0], pacmanPosition[1], problem.walls.height)
-#     for food_index in remaining_food:
-#         end = cell_to_node(food_index[0], food_index[1], problem.walls.height)
-#         x = util.manhattanDistance(pacmanPosition, food_index)
-#         min_dist = min(min_dist, x)
-   
-#     return + min_dist + len(remaining_food) * 5
+            # First check: is the successor already have a node
+            next_state_node = astarData.nodes.get(next_state)
 
-def cluster_food(remaining_food):
-    # Simple clustering by proximity
-    clusters = []
-    for food in remaining_food:
-        added = False
-        for cluster in clusters:
-            if any(util.manhattanDistance(food, c) < 3 for c in cluster):
-                cluster.append(food)
-                added = True
-                break
-        if not added:
-            clusters.append([food])
-    return clusters
+            # update the h_value, it parent node and the action from parent node to this node (also known as node redirection)
+            if (next_state_node is None) or astarData.nodes[next_state].f > new_f:
 
-def heuristic(state, problem):
+                next_state_node = Node(next_state)
+                astarData.nodes[next_state] = next_state_node
+
+                next_state_node.f = new_f
+                next_state_node.g = new_g
+                next_state_node.actionTaken = action
+                next_state_node.parent = current_node
+
+                if next_state_node.f <= astarData.treshold:
+                    hq.heappush(astarData.open_list, next_state_node)
+                else:
+                    hq.heappush(astarData.visited, next_state_node)
+
+    return astarData.terminate, []
+
+def heuristic(state, problem: q1c_problem):
+
     pacmanPosition, remaining_food = state
-
+    
     if not remaining_food:
         return 0
+    
+    min_dist = float('inf')
+    for food_index in remaining_food:
+        x = util.manhattanDistance(pacmanPosition, food_index)
+        min_dist = min(min_dist, x)
+   
+    return + min_dist + len(remaining_food) * 5
 
-    clusters = cluster_food(remaining_food)
-    cluster_dists = [min(util.manhattanDistance(pacmanPosition, food) for food in cluster) for cluster in clusters]
+def action_reconstruct(astarData: AStarData, destination_node: Node):
+    action = []
 
-    nearest_cluster_dist = min(cluster_dists)
-    return nearest_cluster_dist + len(remaining_food) * 4
+    state_node: Node = destination_node
+    while state_node.parent != state_node:
+        action.append(state_node.actionTaken)
+        state_node = state_node.parent
 
-def reconstruct_path(parent_map, current):
-    path = []
-    while current in parent_map:
-        current, action = parent_map[current]
-        path.append(action)
-    path.reverse()
-    return path
-
-def cell_to_node(x, y, height):
-        return x * height + y
+    action.reverse()
+    return action
 
 def dfs(start_pos: tuple[int, int], foodGrid: Grid, wallGrid):
     height = foodGrid.height
