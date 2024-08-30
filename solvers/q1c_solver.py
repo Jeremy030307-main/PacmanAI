@@ -26,6 +26,7 @@ def q1c_solver(problem: q1c_problem):
     # shortest_pairs = allPairShortest(problem.walls)
     startState = problem.getStartState()
 
+    # test = dfs(startState[0], problem.foods, problem.walls)
     visited_food_grid = dfs(startState[0], problem.foods, problem.walls)
     new_food_list = set(startState[1]) - set(visited_food_grid)
     startState = (startState[0], tuple(new_food_list))
@@ -184,29 +185,34 @@ def mst(food_list: list[tuple[int]], height):
 
     return cost, visited
 
-def dfs(start_pos: tuple[int], foodGrid: Grid, wallGrid):
-
+def dfs(start_pos: tuple[int, int], foodGrid: Grid, wallGrid):
     height = foodGrid.height
     width = foodGrid.width
 
     visited = [[False for _ in range(height)] for _ in range(width)]
+    stack = [start_pos]
 
-    def bridgeUtil(position, visited, dimension):
+    while stack:
+        x, y = stack.pop(0)
 
-        x,y = position
-        # Mark the current node as visited and print it
+        if visited[x][y]:
+            continue
+
+        # Mark the current node as visited
         foodGrid[x][y] = False
         visited[x][y] = True
+        print(x,y)
 
-        all_directions = [(0,1), (1,0), (-1,0), (0,-1)]
+        print(foodGrid)
+        print("---------------------")
+
+        all_directions = [(0, 1), (1, 0), (-1, 0), (0, -1)]
 
         for direction in all_directions:
             next_x = x + direction[0]
             next_y = y + direction[1]
 
-            if 0 <= next_x < dimension[1] and 0 <= next_y < dimension[0] and visited[next_x][next_y] == False and not wallGrid[next_x][next_y]:
-                bridgeUtil((next_x, next_y), visited, dimension)
-
-    bridgeUtil(start_pos, visited, (height, width))
-
+            if 0 <= next_x < width and 0 <= next_y < height and not visited[next_x][next_y] and not wallGrid[next_x][next_y]:
+                stack.append((next_x, next_y))
+    
     return foodGrid.asList()
