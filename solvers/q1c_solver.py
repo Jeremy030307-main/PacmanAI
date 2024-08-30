@@ -26,7 +26,6 @@ def q1c_solver(problem: q1c_problem):
     terminate = False
     start_time = time.time()
     while not terminate:
-        elapsed_time = time.time()- start_time
         num_expansions += 1
         terminate, result = astar_loop_body(problem, astarData, timeout, start_time)
     print(f'Number of node expansions: {num_expansions}')
@@ -71,7 +70,6 @@ class AStarData:
         self.open_list: list[Node] = []
         self.nodes: dict[tuple, Node] = {}
         self.terminate = False
-        self.treshold = None
         self.visited:list[Node] = []
         self.highest_node: Node = None
 
@@ -100,19 +98,14 @@ def astar_initialise(problem: q1c_problem):
     astarData.nodes[start_state] = start_node
 
     # set the initial threshold value as 0
-    astarData.treshold = start_node.f
     astarData.highest_node = start_node
 
     hq.heappush(astarData.open_list, start_node)
-    hq.heappush(astarData.visited, start_node)
 
     return astarData    
 
 def astar_loop_body(problem: q1c_problem, astarData: AStarData, timeout ,start_time):
 
-    lowest_visited_node: Node = astarData.visited.pop(0)
-    astarData.treshold = lowest_visited_node.f
-    hq.heappush(astarData.open_list, lowest_visited_node)
 
     while len(astarData.open_list) > 0:
         elapsed_time = time.time() - start_time
@@ -123,10 +116,7 @@ def astar_loop_body(problem: q1c_problem, astarData: AStarData, timeout ,start_t
 
         # check if the current position is the goal state
         if problem.isGoalState((current_node.position, current_node.food_remaining)) or elapsed_time > timeout - 0.1:
-            if elapsed_time > timeout - 0.1:
-                actions = action_reconstruct(astarData, astarData.highest_node)
-            else:
-                actions = action_reconstruct(astarData, current_node)
+            actions = action_reconstruct(astarData, current_node)
             astarData.terminate = True
             return astarData.terminate, actions
         
@@ -156,10 +146,7 @@ def astar_loop_body(problem: q1c_problem, astarData: AStarData, timeout ,start_t
                 next_state_node.actionTaken = action
                 next_state_node.parent = current_node
 
-                if next_state_node.f <= astarData.treshold:
-                    hq.heappush(astarData.open_list, next_state_node)
-                else:
-                    hq.heappush(astarData.visited, next_state_node)
+                hq.heappush(astarData.open_list, next_state_node)
                 
     return astarData.terminate, []
 
@@ -174,12 +161,6 @@ def heuristic(state, problem: q1c_problem):
     for food_index in remaining_food:
         x = util.manhattanDistance(pacmanPosition, food_index)
         min_dist = min(min_dist, x)
-
-    max_between = float('-inf')
-    for food1 in remaining_food:
-        for food2 in remaining_food:
-            dist = util.manhattanDistance(food1, food2)
-            max_between = max(max_between, dist)
    
     return min_dist + len(remaining_food) * 5
 
