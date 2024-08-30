@@ -62,47 +62,52 @@ def q1c_solver(problem: q1c_problem):
 
 total_time = 0
 
-def heuristic(state, problem: q1c_problem):
+# def heuristic(state, problem: q1c_problem):
 
-    global total_time
-    global shortest_pairs
-    pacmanPosition, remaining_food = state
+#     global total_time
+#     global shortest_pairs
+#     pacmanPosition, remaining_food = state
     
+#     if not remaining_food:
+#         return 0
+    
+#     x = time.time()
+#     heuristic = 0
+
+#     min_dist = float('inf')
+#     start = cell_to_node(pacmanPosition[0], pacmanPosition[1], problem.walls.height)
+#     for food_index in remaining_food:
+#         end = cell_to_node(food_index[0], food_index[1], problem.walls.height)
+#         x = util.manhattanDistance(pacmanPosition, food_index)
+#         min_dist = min(min_dist, x)
+   
+#     return + min_dist + len(remaining_food) * 5
+
+def cluster_food(remaining_food):
+    # Simple clustering by proximity
+    clusters = []
+    for food in remaining_food:
+        added = False
+        for cluster in clusters:
+            if any(util.manhattanDistance(food, c) < 3 for c in cluster):
+                cluster.append(food)
+                added = True
+                break
+        if not added:
+            clusters.append([food])
+    return clusters
+
+def heuristic(state, problem):
+    pacmanPosition, remaining_food = state
+
     if not remaining_food:
         return 0
-    
-    x = time.time()
-    heuristic = 0
 
-    min_dist = float('inf')
-    start = cell_to_node(pacmanPosition[0], pacmanPosition[1], problem.walls.height)
-    for food_index in remaining_food:
-        end = cell_to_node(food_index[0], food_index[1], problem.walls.height)
-        x = util.manhattanDistance(pacmanPosition, food_index)
-        min_dist = min(min_dist, x)
-   
-    # return + min_dist + len(remaining_food) * 5
+    clusters = cluster_food(remaining_food)
+    cluster_dists = [min(util.manhattanDistance(pacmanPosition, food) for food in cluster) for cluster in clusters]
 
-    gs = problem.startingGameState
-    foodList = remaining_food
-    foodCount = len(foodList)
-    max_dis = 0
-    part_max_dis = 0
-
-    for i in range(foodCount):
-        for ii in range(foodCount-i-1):
-            dis = util.manhattanDistance(foodList[i],foodList[ii+1])
-            if dis > max_dis:
-                max_dis = dis
-                part1 = util.manhattanDistance(pacmanPosition,foodList[i])
-                part2 = util.manhattanDistance(pacmanPosition,foodList[ii+1])
-                
-                if part1 > part2:
-                    part_max_dis = part2
-                else:
-                    part_max_dis = part1
-    
-    return max_dis + part_max_dis * 0.5 + len(remaining_food) * 5
+    nearest_cluster_dist = min(cluster_dists)
+    return nearest_cluster_dist + len(remaining_food) * 4
 
 def reconstruct_path(parent_map, current):
     path = []
