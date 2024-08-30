@@ -115,76 +115,6 @@ def reconstruct_path(parent_map, current):
 def cell_to_node(x, y, height):
         return x * height + y
 
-def allPairShortest(wall_grid):
-    
-    x = time.time()
-    INF = float('inf')
-    n = wall_grid.width-2
-    m = wall_grid.height-2
-
-    # Initialize the distance matrix
-    dist = [[INF] * (n * m) for _ in range(n * m)]
-
-    for i in range(n):
-        for j in range(m):
-            if wall_grid[i+1][j+1]:
-                continue
-            node = cell_to_node(i,j, m)
-            dist[node][node] = 0. # distance to itself is 0
-
-            for dx, dy in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
-                ni, nj = i + dx, j + dy
-                if 0 <= ni < n and 0 <= nj < m and not wall_grid[ni+1][nj+1]:
-                    neighbor_node = cell_to_node(ni, nj, m)
-                    dist[node][neighbor_node] = 1  # Distance between adjacent cells is 1
-
-    # Floyd-Warshall algorithm
-    total_nodes = n * m
-    for k in range(total_nodes):
-        for i in range(total_nodes):
-            for j in range(total_nodes):
-                dist[i][j] = min(dist[i][j], dist[i][k] + dist[k][j])
-    y = time.time()
-    print(y-x)
-    return dist
-
-def mst(food_list: list[tuple[int]], height):
-
-    global shortest_pairs
-
-    visited = [False for _ in range(len(food_list))]
-    total_node = len(food_list)
-    num_visited_node = 0
-    cost = 0
-
-    while (num_visited_node < total_node):
-        # For every vertex in the set S, find the all adjacent vertices
-        #, calculate the distance from the vertex selected at step 1.
-        # if the vertex is already in the set S, discard it otherwise
-        # choose another vertex nearest to selected vertex  at step 1.
-        minimum = float('inf')
-        x = 0
-        y = 0
-        for i in range(total_node):
-            if visited[i]:
-                for j in range(total_node):
-                    start = cell_to_node(food_list[i][0]-1, food_list[i][1]-1, height-2)
-                    end = cell_to_node(food_list[j][0]-1, food_list[j][1]-1, height-2)
-                    if ((not visited[j]) and shortest_pairs[start][end] and shortest_pairs[start][end] != float("inf")): 
-                        # not in selected and there is an edge
-                        if minimum > shortest_pairs[start][end]:
-                            minimum = shortest_pairs[start][end]
-                            x = i
-                            y = j
-
-        start = cell_to_node(food_list[x][0]-1, food_list[x][1]-1, height-2)
-        end = cell_to_node(food_list[y][0]-1, food_list[y][1]-1, height-2)
-        cost += shortest_pairs[start][end]
-        visited[y] = True
-        num_visited_node += 1
-
-    return cost, visited
-
 def dfs(start_pos: tuple[int, int], foodGrid: Grid, wallGrid):
     height = foodGrid.height
     width = foodGrid.width
@@ -192,7 +122,7 @@ def dfs(start_pos: tuple[int, int], foodGrid: Grid, wallGrid):
     visited = [[False for _ in range(height)] for _ in range(width)]
     stack = [start_pos]
 
-    while stack:
+    while stack and len(foodGrid.asList()) != 0:
         x, y = stack.pop(0)
 
         if visited[x][y]:
@@ -201,10 +131,6 @@ def dfs(start_pos: tuple[int, int], foodGrid: Grid, wallGrid):
         # Mark the current node as visited
         foodGrid[x][y] = False
         visited[x][y] = True
-        print(x,y)
-
-        print(foodGrid)
-        print("---------------------")
 
         all_directions = [(0, 1), (1, 0), (-1, 0), (0, -1)]
 
