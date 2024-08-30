@@ -117,10 +117,9 @@ def q1c_solver(problem: q1c_problem):
         improvement = False
         for i in range(len(paths)):
 
-            if problem.unreachable:
-                new_action, new_path = remove_a_dot(action_paths, paths, i, problem.startingGameState)
-                walk_route = walk_path(new_action, problem)
-                if best_distance - len(walk_route) > 10:
+            new_action, new_path = remove_a_dot(action_paths, paths, i, problem.startingGameState)
+            walk_route = walk_path(new_action, problem)
+            if (problem.unreachable and (best_distance - len(walk_route) > 10)) or (not problem.unreachable and (best_distance - len(walk_route) > 500)):
                     best_distance = len(walk_route)
                     action_paths = walk_route
                     paths = new_path
@@ -138,7 +137,7 @@ def q1c_solver(problem: q1c_problem):
                         improvement = True
                         break  # Exit the inner loop
 
-                    if time.time() - start > 9.8:
+                    if time.time() - start > 9.88:
                         return action_paths
                 if improvement:
                     break  # Exit the outer loop
