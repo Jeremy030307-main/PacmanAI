@@ -115,7 +115,7 @@ def astar_loop_body(problem: q1c_problem, astarData: AStarData, timeout ,start_t
         current_node = astarData.open_list.pop(0)
 
         # check if the current position is the goal state
-        if problem.isGoalState((current_node.position, current_node.food_remaining)) or elapsed_time > timeout - 0.1:
+        if problem.isGoalState((current_node.position, current_node.food_remaining)):
             actions = action_reconstruct(astarData, current_node)
             astarData.terminate = True
             return astarData.terminate, actions
