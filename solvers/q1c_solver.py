@@ -95,7 +95,7 @@ def heuristic(state, problem: q1c_problem):
         x = util.manhattanDistance(pacmanPosition, food_index)
         min_dist = min(min_dist, x)
    
-    # return + min_dist + len(remaining_food) * 5
+    return + min_dist + len(remaining_food) * 5
 
     gs = problem.startingGameState
     foodList = remaining_food
@@ -117,6 +117,8 @@ def heuristic(state, problem: q1c_problem):
                     part_max_dis = part1
     
     return max_dis + part_max_dis * 0.5 + len(remaining_food) * 5
+
+    
 
 def reconstruct_path(parent_map, current):
     path = []
