@@ -187,7 +187,7 @@ def dfs(start_pos: tuple[int, int], foodGrid: Grid, wallGrid):
     visited = [[False for _ in range(height)] for _ in range(width)]
     stack = [start_pos]
 
-    while stack and len(foodGrid.asList()) != 0:
+    while stack:
         x, y = stack.pop(0)
 
         if visited[x][y]:
