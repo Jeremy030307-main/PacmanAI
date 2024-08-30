@@ -116,6 +116,16 @@ def q1c_solver(problem: q1c_problem):
     while improvement:
         improvement = False
         for i in range(len(paths)):
+
+            new_action, new_path = remove_a_dot(action_paths, paths, i, problem.startingGameState)
+            walk_route = walk_path(new_action, problem)
+            if (problem.unreachable and (best_distance - len(walk_route) >= 8)) or (not problem.unreachable and (best_distance - len(walk_route) > 100)):
+                    best_distance = len(walk_route)
+                    action_paths = walk_route
+                    paths = new_path
+                    improvement = True
+                    break  
+
             for j in range(i + 1, len(paths)):
                 if i < len(paths)-1:
                     new_action, new_path = two_opt_swap(action_paths, paths, i, j, problem.startingGameState)
