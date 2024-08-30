@@ -3,7 +3,7 @@ import time
 from typing import Tuple
 
 import util
-from game import Actions, Agent, Directions
+from game import Actions, Agent, Directions, Grid
 from logs.search_logger import log_function
 from pacman import GameState
 
@@ -26,9 +26,17 @@ class q1c_problem:
         goal: A position in the gameState
         """
         self.startingGameState: GameState = gameState
-        self.startState = (gameState.getPacmanPosition(), tuple(gameState.getFood().asList()))
         self.walls = gameState.getWalls()
         self.foods = gameState.getFood()
+
+        unvisited_food = self.dfs(gameState.getFood().deepCopy())
+        self.unreachable = False
+        if len(unvisited_food) > 0:
+            self.unreachable = True
+
+        valid_food = set(self.foods.asList()) - set(unvisited_food)
+        self.startState = (gameState.getPacmanPosition(), list(valid_food))
+        
 
     @log_function
     def getStartState(self):
@@ -71,3 +79,30 @@ class q1c_problem:
         
         return successors
 
+    def dfs(self, food_grid : Grid):
+        height = food_grid.height
+        width = food_grid.width
+
+        visited = [[False for _ in range(height)] for _ in range(width)]
+        stack = [self.startingGameState.getPacmanPosition()]
+
+        while stack and len(food_grid.asList()) != 0:
+            x, y = stack.pop(0)
+
+            if visited[x][y]:
+                continue
+
+            # Mark the current node as visited
+            food_grid[x][y] = False
+            visited[x][y] = True
+
+            all_directions = [(0, 1), (1, 0), (-1, 0), (0, -1)]
+
+            for direction in all_directions:
+                next_x = x + direction[0]
+                next_y = y + direction[1]
+
+                if 0 <= next_x < width and 0 <= next_y < height and not visited[next_x][next_y] and not self.walls[next_x][next_y]:
+                    stack.append((next_x, next_y))
+        
+        return food_grid.asList()
