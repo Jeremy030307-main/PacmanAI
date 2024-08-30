@@ -115,21 +115,60 @@ def q1c_solver(problem: q1c_problem):
 
     while improvement:
         improvement = False
-        for i in range(len(paths) - 1):
-            for j in range(i + 1, len(paths)):
-                new_action, new_path = two_opt_swap(action_paths, paths, i, j, problem.startingGameState)
+        for i in range(len(paths)):
+
+            if problem.unreachable:
+                new_action, new_path = remove_a_dot(action_paths, paths, i, problem.startingGameState)
                 walk_route = walk_path(new_action, problem)
-                if len(walk_route) < best_distance:
+                if best_distance - len(walk_route) > 10:
                     best_distance = len(walk_route)
                     action_paths = walk_route
                     paths = new_path
                     improvement = True
-                    break  # Exit the inner loop
+                    break  
 
-                if time.time() - start > 9.8:
-                    return action_paths
-            if improvement:
-                break  # Exit the outer loop
+            for j in range(i + 1, len(paths)):
+                if i < len(paths)-1:
+                    new_action, new_path = two_opt_swap(action_paths, paths, i, j, problem.startingGameState)
+                    walk_route = walk_path(new_action, problem)
+                    if len(walk_route) < best_distance:
+                        best_distance = len(walk_route)
+                        action_paths = walk_route
+                        paths = new_path
+                        improvement = True
+                        break  # Exit the inner loop
+
+                    if time.time() - start > 9.8:
+                        return action_paths
+                if improvement:
+                    break  # Exit the outer loop
 
     return action_paths
+
+def remove_a_dot(action_path, path, index, gs):
+
+    new_actions = action_path[:]
+    new_path: list = path[:]
+
+    start_action = 0
+    for i in range(index-1):
+        start_action += path[i][1]
+    end_action = start_action + path[index-1][1] + path[index][1]
+
+    if index < len(path)-1:
+        distance_prob = q1a_problem(gs)
+        distance_prob.start_pos = path[index-1][0]
+        distance_prob.goalPoint = path[index+1][0]
+        new_interval_path = q1a_solver(distance_prob)
+    else: # if the point to remove is the at the end of path
+        new_interval_path = []
+
+    new_path[index-1] = (new_path[index-1][0], len(new_interval_path))
+    new_path.pop(index)
+    new_actions[start_action:end_action] = new_interval_path
+    print(new_actions)
+    return new_actions, new_path
+
+
+    
 
