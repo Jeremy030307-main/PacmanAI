@@ -82,7 +82,6 @@ from game import Grid
 
 #     # run a dfs on the entire maze to identify unreachable food dot
 #     visited_food_grid = dfs(start_state[0], problem.foods.deepCopy(), problem.walls)
-#     test = dfs_path(start_state[0], problem)
 #     valid_food_list = set(start_state[1]) - set(visited_food_grid)
 #     start_state = (start_state[0], tuple(valid_food_list))
 
@@ -181,74 +180,44 @@ from game import Grid
 #     action.reverse()
 #     return action
 
-# def dfs(start_pos: tuple[int, int], foodGrid: Grid, wallGrid):
-#     height = foodGrid.height
-#     width = foodGrid.width
+def dfs(start_pos: tuple[int, int], foodGrid: Grid, wallGrid):
+    height = foodGrid.height
+    width = foodGrid.width
 
-#     visited = [[False for _ in range(height)] for _ in range(width)]
-#     stack = [start_pos]
+    visited = [[False for _ in range(height)] for _ in range(width)]
+    stack = [start_pos]
 
-#     while stack and len(foodGrid.asList()) != 0:
-#         print("fsdfdsf")
-#         x, y = stack.pop(0)
+    while stack and len(foodGrid.asList()) != 0:
+        print("fsdfdsf")
+        x, y = stack.pop(0)
 
-#         if visited[x][y]:
-#             continue
+        if visited[x][y]:
+            continue
 
-#         # Mark the current node as visited
-#         foodGrid[x][y] = False
-#         visited[x][y] = True
+        # Mark the current node as visited
+        foodGrid[x][y] = False
+        visited[x][y] = True
 
-#         all_directions = [(0, 1), (1, 0), (-1, 0), (0, -1)]
+        all_directions = [(0, 1), (1, 0), (-1, 0), (0, -1)]
 
-#         for direction in all_directions:
-#             next_x = x + direction[0]
-#             next_y = y + direction[1]
+        for direction in all_directions:
+            next_x = x + direction[0]
+            next_y = y + direction[1]
 
-#             if 0 <= next_x < width and 0 <= next_y < height and not visited[next_x][next_y] and not wallGrid[next_x][next_y]:
-#                 stack.append((next_x, next_y))
+            if 0 <= next_x < width and 0 <= next_y < height and not visited[next_x][next_y] and not wallGrid[next_x][next_y]:
+                stack.append((next_x, next_y))
     
-#     return foodGrid.asList()
-
-# def dfs_path(start_pos: tuple[int, int], problem: q1c_problem):
-
-#     height = problem.walls.height
-#     width = problem.walls.width
-#     foodGrid = problem.foods
-
-#     visited = [[False for _ in range(height)] for _ in range(width)]
-#     stack = [start_pos]
-#     path = []
-
-#     while stack and len(foodGrid.asList()) != 0:
-#         print("Enter")
-#         x, y = stack.pop(0)
-#         if visited[x][y]:
-#             continue
-
-#         # Mark the current node as visited
-#         if foodGrid[x][y] == True:
-#             path.append((x,y))
-
-#         visited[x][y] = True
-
-#         all_directions = [(0, 1), (1, 0), (-1, 0), (0, -1)]
-
-#         for direction in all_directions:
-#             next_x = x + direction[0]
-#             next_y = y + direction[1]
-
-#             if 0 <= next_x < width and 0 <= next_y < height and not visited[next_x][next_y] and not problem.walls[next_x][next_y]:
-#                 stack.append((next_x, next_y))
-    
-#     print(path)
-#     return foodGrid.asList()
+    return foodGrid.asList()
 
 def q1c_solver(problem: q1c_problem):
 
-    all_food = problem.foods.asList()
+    start_state = problem.getStartState()   
+    visited_food_grid = dfs(start_state[0], problem.foods.deepCopy(), problem.walls)
+    valid_food_list = set(start_state[1]) - set(visited_food_grid)
+
     total_path = []
     problem_b = q1b_problem(problem.startingGameState)
+    problem_b.goalPoints = valid_food_list
 
     while problem_b.goalPoints:
         total_path += q1b_solver(problem_b)
