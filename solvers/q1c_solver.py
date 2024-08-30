@@ -27,7 +27,6 @@ def q1c_solver(problem: q1c_problem):
     start_time = time.time()
     while not terminate:
         elapsed_time = time.time()- start_time
-        print(elapsed_time)
         num_expansions += 1
         terminate, result = astar_loop_body(problem, astarData, timeout, start_time)
     print(f'Number of node expansions: {num_expansions}')
@@ -155,7 +154,7 @@ def astar_loop_body(problem: q1c_problem, astarData: AStarData, timeout ,start_t
                 next_state_node.actionTaken = action
                 next_state_node.parent = current_node
 
-                if next_state_node.f <= astarData.treshold:
+                if ((astarData.total_food - len(next_state_node.food_remaining)) * 10 - next_state_node.g) <= astarData.treshold:
                     hq.heappush(astarData.open_list, next_state_node)
                 else:
                     hq.heappush(astarData.visited, next_state_node)
@@ -182,7 +181,7 @@ def heuristic(state, problem: q1c_problem):
             dist = util.manhattanDistance(food1, food2)
             max_between = max(max_between, dist)
    
-    return min_dist + len(remaining_food) * 3
+    return min_dist + len(remaining_food) * 5
 
 def action_reconstruct(astarData: AStarData, destination_node: Node):
     action = []
