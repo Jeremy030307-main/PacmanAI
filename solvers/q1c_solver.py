@@ -44,6 +44,7 @@ class Node:
         self.parent: Node = None
         self.actionTaken: Directions = None
         self.visited = False
+        self.score = 0
 
     def __eq__(self, value: 'Node') -> bool:
         return (self.f, self.state) == (value.f, value.state)
@@ -72,7 +73,7 @@ class AStarData:
         self.terminate = False
         self.treshold = None
         self.visited:list[Node] = []
-        self.highest_node = None
+        self.highest_node: Node = None
 
 def astar_initialise(problem: q1c_problem):
 
@@ -95,10 +96,11 @@ def astar_initialise(problem: q1c_problem):
     start_node.g = 0
     start_node.f = heuristic(start_state, problem)
     start_node.parent = start_node
+    start_node.score = 0
     astarData.nodes[start_state] = start_node
 
     # set the initial threshold value as 0
-    astarData.treshold = 0
+    astarData.treshold = start_node.f
     astarData.highest_node = start_node
 
     hq.heappush(astarData.open_list, start_node)
@@ -109,7 +111,7 @@ def astar_initialise(problem: q1c_problem):
 def astar_loop_body(problem: q1c_problem, astarData: AStarData, timeout ,start_time):
 
     lowest_visited_node: Node = astarData.visited.pop(0)
-    astarData.treshold = (astarData.total_food - len(lowest_visited_node.food_remaining)) * 10 - lowest_visited_node.g
+    astarData.treshold = lowest_visited_node.f
     hq.heappush(astarData.open_list, lowest_visited_node)
 
     while len(astarData.open_list) > 0:
@@ -154,12 +156,10 @@ def astar_loop_body(problem: q1c_problem, astarData: AStarData, timeout ,start_t
                 next_state_node.actionTaken = action
                 next_state_node.parent = current_node
 
-                if ((astarData.total_food - len(next_state_node.food_remaining)) * 10 - next_state_node.g) <= astarData.treshold:
+                if next_state_node.f <= astarData.treshold:
                     hq.heappush(astarData.open_list, next_state_node)
                 else:
                     hq.heappush(astarData.visited, next_state_node)
-                    if ((astarData.total_food - len(next_state_node.food_remaining)) * 10 - next_state_node.g) > ((astarData.total_food - len(astarData.highest_node.food_remaining)) * 10 - astarData.highest_node.g):
-                        astarData.highest_node = next_state_node
                 
     return astarData.terminate, []
 
