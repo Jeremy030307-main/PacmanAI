@@ -30,7 +30,7 @@ class q1c_problem:
         self.foods = gameState.getFood()
 
         # unvisited_food = self.dfs(gameState.getFood().deepCopy())
-        # self.unreachable = False
+        self.unreachable = False
         # if len(unvisited_food) > 0:
         #     self.unreachable = True
 
