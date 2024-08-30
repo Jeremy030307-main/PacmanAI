@@ -72,21 +72,6 @@ def heuristic(state, problem: q1c_problem):
     
     x = time.time()
     heuristic = 0
-    # construct mst of the remaining dots
-    # heuristic = mst(remaining_food, problem.walls.height)
-
-    # Calculate the minimum distance to the closest dot
-    # min_dist = float('inf')
-    # start = cell_to_node(pacmanPosition[0]-1, pacmanPosition[1]-1, problem.walls.height-2)
-    # for food_index in remaining_food:
-    #     end = cell_to_node(food_index[0]-1, food_index[1]-1, problem.walls.height-2)
-    #     min_dist = min(min_dist, shortest_pairs[start][end])
-   
-    # y = time.time()
-    # print(y-x)
-    # heuristic += min_dist  
-    # # return  heuristic + len(remaining_food) * ((problem.walls.height + problem.walls.width) / 2)
-    # return heuristic + len(remaining_food) * 5
 
     min_dist = float('inf')
     start = cell_to_node(pacmanPosition[0], pacmanPosition[1], problem.walls.height)
@@ -117,8 +102,6 @@ def heuristic(state, problem: q1c_problem):
                     part_max_dis = part1
     
     return max_dis + part_max_dis * 0.5 + len(remaining_food) * 5
-
-    
 
 def reconstruct_path(parent_map, current):
     path = []
@@ -208,7 +191,7 @@ def dfs(start_pos: tuple[int], foodGrid: Grid, wallGrid):
 
     visited = [[False for _ in range(height)] for _ in range(width)]
 
-    def bridgeUtil(position, visited):
+    def bridgeUtil(position, visited, dimension):
 
         x,y = position
         # Mark the current node as visited and print it
@@ -221,9 +204,9 @@ def dfs(start_pos: tuple[int], foodGrid: Grid, wallGrid):
             next_x = x + direction[0]
             next_y = y + direction[1]
 
-            if visited[next_x][next_y] == False and not wallGrid[next_x][next_y]:
-                bridgeUtil((next_x, next_y), visited)
+            if 0 <= next_x < dimension[1] and 0 <= next_y < dimension[0] and visited[next_x][next_y] == False and not wallGrid[next_x][next_y]:
+                bridgeUtil((next_x, next_y), visited, dimension)
 
-    bridgeUtil(start_pos, visited)
+    bridgeUtil(start_pos, visited, (height, width))
 
     return foodGrid.asList()
