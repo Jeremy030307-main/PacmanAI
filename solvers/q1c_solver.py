@@ -26,6 +26,8 @@ def q1c_solver(problem: q1c_problem):
     terminate = False
     start_time = time.time()
     while not terminate:
+        elapsed_time = time.time()- start_time
+        print(elapsed_time)
         num_expansions += 1
         terminate, result = astar_loop_body(problem, astarData, timeout, start_time)
     print(f'Number of node expansions: {num_expansions}')
@@ -71,6 +73,7 @@ class AStarData:
         self.terminate = False
         self.treshold = None
         self.visited:list[Node] = []
+        self.highest_node = None
 
 def astar_initialise(problem: q1c_problem):
 
@@ -97,6 +100,7 @@ def astar_initialise(problem: q1c_problem):
 
     # set the initial threshold value as 0
     astarData.treshold = 0
+    astarData.highest_node = start_node
 
     hq.heappush(astarData.open_list, start_node)
     hq.heappush(astarData.visited, start_node)
@@ -118,7 +122,10 @@ def astar_loop_body(problem: q1c_problem, astarData: AStarData, timeout ,start_t
 
         # check if the current position is the goal state
         if problem.isGoalState((current_node.position, current_node.food_remaining)) or elapsed_time > timeout - 0.1:
-            actions = action_reconstruct(astarData, current_node)
+            if elapsed_time > timeout - 0.1:
+                actions = action_reconstruct(astarData, astarData.highest_node)
+            else:
+                actions = action_reconstruct(astarData, current_node)
             astarData.terminate = True
             return astarData.terminate, actions
         
@@ -152,7 +159,9 @@ def astar_loop_body(problem: q1c_problem, astarData: AStarData, timeout ,start_t
                     hq.heappush(astarData.open_list, next_state_node)
                 else:
                     hq.heappush(astarData.visited, next_state_node)
-
+                    if ((astarData.total_food - len(next_state_node.food_remaining)) * 10 - next_state_node.g) > ((astarData.total_food - len(astarData.highest_node.food_remaining)) * 10 - astarData.highest_node.g):
+                        astarData.highest_node = next_state_node
+                
     return astarData.terminate, []
 
 def heuristic(state, problem: q1c_problem):
@@ -166,8 +175,14 @@ def heuristic(state, problem: q1c_problem):
     for food_index in remaining_food:
         x = util.manhattanDistance(pacmanPosition, food_index)
         min_dist = min(min_dist, x)
+
+    max_between = float('-inf')
+    for food1 in remaining_food:
+        for food2 in remaining_food:
+            dist = util.manhattanDistance(food1, food2)
+            max_between = max(max_between, dist)
    
-    return + min_dist + len(remaining_food) * 5
+    return min_dist + len(remaining_food) * 3
 
 def action_reconstruct(astarData: AStarData, destination_node: Node):
     action = []
