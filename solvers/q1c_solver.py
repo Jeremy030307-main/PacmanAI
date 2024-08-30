@@ -42,6 +42,8 @@ def greedy_path(problem: q1c_problem):
 
 def two_opt_swap(action_path, path, v1, v2, gs):
 
+    global lookup
+
     new_path = path[:]
     for i in range(v1+2,v2+1):
         new_path[i] = (new_path[i][0], path[i-1][1])
@@ -62,16 +64,23 @@ def two_opt_swap(action_path, path, v1, v2, gs):
             break_point2[1] = break_point2[0] + path[i][1]
 
     distance_prob = q1a_problem(gs)
-    distance_prob.start_pos = path[v1][0]
-    distance_prob.goalPoint = path[v2][0]
-    first_interval = q1a_solver(distance_prob)
+
+    first_interval = lookup.get((path[v1][0],path[v2][0]))
+    if first_interval is None:
+        distance_prob.start_pos = path[v1][0]
+        distance_prob.goalPoint = path[v2][0]
+        first_interval = q1a_solver(distance_prob)
+        lookup[(path[v1][0],path[v2][0])] = first_interval
 
     if v2 >= len(path)-1:
         second_interval = []
     else:
-        distance_prob.start_pos = path[v1+1][0]
-        distance_prob.goalPoint = path[v2+1][0]
-        second_interval = q1a_solver(distance_prob)
+        second_interval = lookup.get((path[v1+1][0],path[v2+1][0]))
+        if second_interval is None:
+            distance_prob.start_pos = path[v1+1][0]
+            distance_prob.goalPoint = path[v2+1][0]
+            second_interval = q1a_solver(distance_prob)
+            lookup[(path[v1+1][0],path[v2+1][0])] = second_interval
 
     first_part = action_path[:break_point1[0]]
     middle_part: list = action_path[break_point2[0]-1: break_point1[1]-1:-1]
@@ -106,7 +115,9 @@ def walk_path(action_path, problem: q1c_problem):
 
 def q1c_solver(problem: q1c_problem):
 
+    global lookup
     start = time.time()
+    lookup = {}
 
     action_paths, paths = greedy_path(problem)
     # return action_paths
@@ -116,16 +127,6 @@ def q1c_solver(problem: q1c_problem):
     while improvement:
         improvement = False
         for i in range(len(paths)):
-
-            new_action, new_path = remove_a_dot(action_paths, paths, i, problem.startingGameState)
-            walk_route = walk_path(new_action, problem)
-            if (problem.unreachable and (best_distance - len(walk_route) >= 8)) or (not problem.unreachable and (best_distance - len(walk_route) > 100)):
-                    best_distance = len(walk_route)
-                    action_paths = walk_route
-                    paths = new_path
-                    improvement = True
-                    break  
-
             for j in range(i + 1, len(paths)):
                 if i < len(paths)-1:
                     new_action, new_path = two_opt_swap(action_paths, paths, i, j, problem.startingGameState)
@@ -143,31 +144,6 @@ def q1c_solver(problem: q1c_problem):
                     break  # Exit the outer loop
 
     return action_paths
-
-def remove_a_dot(action_path, path, index, gs):
-
-    new_actions = action_path[:]
-    new_path: list = path[:]
-
-    start_action = 0
-    for i in range(index-1):
-        start_action += path[i][1]
-    end_action = start_action + path[index-1][1] + path[index][1]
-
-    if index < len(path)-1:
-        distance_prob = q1a_problem(gs)
-        distance_prob.start_pos = path[index-1][0]
-        distance_prob.goalPoint = path[index+1][0]
-        new_interval_path = q1a_solver(distance_prob)
-    else: # if the point to remove is the at the end of path
-        new_interval_path = []
-
-    new_path[index-1] = (new_path[index-1][0], len(new_interval_path))
-    new_path.pop(index)
-    new_actions[start_action:end_action] = new_interval_path
-    print(new_actions)
-    return new_actions, new_path
-
 
     
 

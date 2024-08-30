@@ -29,12 +29,12 @@ class q1c_problem:
         self.walls = gameState.getWalls()
         self.foods = gameState.getFood()
 
-        # unvisited_food = self.dfs(gameState.getFood().deepCopy())
+        unvisited_food = self.dfs(gameState.getFood().deepCopy())
         self.unreachable = False
-        # if len(unvisited_food) > 0:
-        #     self.unreachable = True
+        if len(unvisited_food) > 0:
+            self.unreachable = True
 
-        valid_food = set(self.foods.asList())
+        valid_food = set(self.foods.asList()) - set(unvisited_food)
         self.startState = (gameState.getPacmanPosition(), list(valid_food))
         
 
