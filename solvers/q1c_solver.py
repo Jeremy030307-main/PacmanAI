@@ -26,12 +26,6 @@ def q1c_solver(problem: q1c_problem):
     terminate = False
     start_time = time.time()
     while not terminate:
-        elapsed_time = time.time()- start_time
-        print(elapsed_time)
-        if elapsed_time > timeout - 0.5:
-            current_node = astarData.open_list.pop(0)
-            actions = action_reconstruct(astarData, current_node)
-            terminate = True
         num_expansions += 1
         terminate, result = astar_loop_body(problem, astarData, timeout, start_time)
     print(f'Number of node expansions: {num_expansions}')
