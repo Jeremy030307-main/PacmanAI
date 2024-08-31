@@ -19,7 +19,7 @@ from solvers.q1a_solver import q1a_solver
 from game import Directions, Actions
 import util
 from game import Grid
-import time
+import time, random
 
 def greedy_path(problem: q1c_problem):
 
@@ -125,26 +125,44 @@ def q1c_solver(problem: q1c_problem):
     best_distance = len(action_paths)
     improvement = True
 
-    while improvement:
-        improvement = False
-        for i in range(len(paths)-1):
-            for j in range(i + 1, len(paths)):
-                space_dist = distance_two_point(paths[i][0], paths[j][0])
-                if space_dist < 5 or space_dist > 20:
-                    new_action, new_path = two_opt_swap(action_paths, paths, i, j, problem.startingGameState)
-                    walk_route = walk_path(new_action, problem,i)
-                    if len(walk_route) < best_distance:
-                        best_distance = len(walk_route)
-                        action_paths = walk_route
-                        paths = new_path
-                        improvement = True
-                        break  # Exit the inner loop
+    # while improvement:
+    #     improvement = False
+    #     for i in range(len(paths)-1):
+    #         for j in range(i + 1, len(paths)):
+    #             space_dist = distance_two_point(paths[i][0], paths[j][0])
+    #             if space_dist < 5:
+    #                 new_action, new_path = two_opt_swap(action_paths, paths, i, j, problem.startingGameState)
+    #                 walk_route = walk_path(new_action, problem,i)
+    #                 if len(walk_route) < best_distance:
+    #                     best_distance = len(walk_route)
+    #                     action_paths = walk_route
+    #                     paths = new_path
+    #                     improvement = True
+    #                     break  # Exit the inner loop
 
-                if time.time() - start > 9.88:
-                    return action_paths
-            if improvement:
-                break  # Exit the outer loop
+    #             if time.time() - start > 9.88:
+    #                 return action_paths
+    #         if improvement:
+    #             break  # Exit the outer loop
 
+    # return action_paths
+    
+    while True:
+        # Generate a random neighboring solution
+        i, j = generate_random_swap_indices(len(paths))
+        
+        new_action, new_path = two_opt_swap(action_paths, paths, i, j, problem.startingGameState)
+        walk_route = walk_path(new_action, problem,i)
+        
+        # If the new path is better, update the current path
+        if len(walk_route) < best_distance:
+            best_distance = len(walk_route)
+            action_paths = walk_route
+            paths = new_path
+        
+        if time.time() - start > 9.88:
+            break
+        
     return action_paths
 
 def distance_two_point(p1: tuple[int, int], p2:tuple[int, int]):
@@ -153,5 +171,8 @@ def distance_two_point(p1: tuple[int, int], p2:tuple[int, int]):
 
     return max(abs(x2-x1), abs(y2-y1))
 
-  
+def generate_random_swap_indices(length):
+    i = random.randint(1, length - 3)
+    j = random.randint(i + 1, length - 1)
+    return i, j
 
