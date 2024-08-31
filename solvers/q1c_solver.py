@@ -92,7 +92,7 @@ def two_opt_swap(action_path, path, v1, v2, gs):
     new_path[v1] = (new_path[v1][0], len(first_interval))
     new_path[v2] = (new_path[v2][0], len(second_interval))
     
-    return new_action_path, new_path, break_point1[0]
+    return new_action_path, new_path
 
 def walk_path(action_path, problem: q1c_problem, starting_index):
 
@@ -111,18 +111,7 @@ def walk_path(action_path, problem: q1c_problem, starting_index):
 
             if len(food_remaining) <= 0:
                 break
-
-    # for action in action_path:
-    #     dx,dy = Actions.directionToVector(action)
-    #     x,y = int(x + dx), int(y + dy)
-    #     distance += 1
-
-    #     if (x,y) in food_remaining:
-    #         food_remaining.remove((x,y))
-
-    #         if len(food_remaining) <= 0:
-    #             break
-    
+            
     return action_path[:distance]
 
 def q1c_solver(problem: q1c_problem):
@@ -138,24 +127,31 @@ def q1c_solver(problem: q1c_problem):
 
     while improvement:
         improvement = False
-        length = int(len(paths) / 20)
-        for i in range(len(paths)-length):
-            for j in range(i + length, len(paths)):
-                new_action, new_path, starting_index = two_opt_swap(action_paths, paths, i, j, problem.startingGameState)
-                walk_route = walk_path(new_action, problem, starting_index)
-                if len(walk_route) < best_distance:
-                    best_distance = len(walk_route)
-                    action_paths = walk_route
-                    paths = new_path
-                    improvement = True
-                    break  # Exit the inner loop
+        for i in range(len(paths)-1):
+            for j in range(i + 1, len(paths)):
+                space_dist = distance_two_point(paths[i][0], paths[j][0])
+                if space_dist < 5:
+                    new_action, new_path = two_opt_swap(action_paths, paths, i, j, problem.startingGameState)
+                    walk_route = walk_path(new_action, problem,i)
+                    if len(walk_route) < best_distance:
+                        best_distance = len(walk_route)
+                        action_paths = walk_route
+                        paths = new_path
+                        improvement = True
+                        break  # Exit the inner loop
 
-                if time.time() - start > 9.89:
+                if time.time() - start > 9.88:
                     return action_paths
-                if improvement:
-                    break  # Exit the outer loop
+            if improvement:
+                break  # Exit the outer loop
 
     return action_paths
 
-    
+def distance_two_point(p1: tuple[int, int], p2:tuple[int, int]):
+    x1,y1 = p1
+    x2,y2 = p2
+
+    return max(abs(x2-x1), abs(y2-y1))
+
+  
 
