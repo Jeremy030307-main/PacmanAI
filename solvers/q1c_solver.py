@@ -19,7 +19,7 @@ from solvers.q1a_solver import q1a_solver
 from game import Directions, Actions
 import util
 from game import Grid
-import time, random
+import time, collections
 
 def greedy_path(problem: q1c_problem):
 
@@ -40,9 +40,7 @@ def greedy_path(problem: q1c_problem):
     paths.append((problem_b.start_pos, 0))
     return action_paths, paths
 
-def two_opt_swap(action_path, path, v1, v2, gs):
-
-    global lookup
+def two_opt_swap(action_path, path, v1, v2, gs, lookup):
 
     new_path = path[:]
     for i in range(v1+2,v2+1):
@@ -116,16 +114,12 @@ def walk_path(action_path, problem: q1c_problem, starting_index):
 
 def q1c_solver(problem: q1c_problem):
 
-    global lookup
     start = time.time()
     lookup = {}
 
     action_paths, paths = greedy_path(problem)
-    # return action_paths
     best_distance = len(action_paths)
     improvement = True
-    penalty_threshold = 0.05 * max(problem.walls.height, problem.walls.width)
-    large_scale_penalty = 500 * penalty_threshold
 
     while improvement:
         improvement = False
@@ -147,8 +141,8 @@ def q1c_solver(problem: q1c_problem):
         for i in range(1,len(paths)-1):
             for j in range(i + 1, len(paths)):
                 space_dist = distance_two_point(paths[i][0], paths[j][0])
-                if space_dist < 10 or space_dist > max(problem.walls.height, problem.walls.width) * 0.7:
-                    new_action, new_path,starting = two_opt_swap(action_paths, paths, i, j, problem.startingGameState)
+                if space_dist < max(problem.walls.height, problem.walls.width) * 0.1 or space_dist > max(problem.walls.height, problem.walls.width) * 0.5:
+                    new_action, new_path,starting = two_opt_swap(action_paths, paths, i, j, problem.startingGameState, lookup)
                     walk_route = walk_path(new_action, problem,starting)
                     if len(walk_route) < best_distance:
                         best_distance = len(walk_route)
@@ -194,5 +188,3 @@ def remove_a_dot(action_path, path, index, gs):
     new_actions[start_action:end_action] = new_interval_path
     print(new_actions)
     return new_actions, new_path
-
-
