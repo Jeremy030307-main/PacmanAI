@@ -96,9 +96,9 @@ class Q2_Agent(Agent):
             return self.evaluationFunction(game_state)
         
         minvalue = float('inf')
-        actions = game_state.getLegalActions(1)
+        actions = game_state.getLegalActions(agent_index)
         for action in actions:
-            successor= game_state.generateSuccessor(1,action)
+            successor= game_state.generateSuccessor(agent_index,action)
 
             if agent_index == (game_state.getNumAgents()-1):
                 minvalue = min(minvalue,self.max_value(successor,depth,alpha,beta))
