@@ -92,15 +92,16 @@ def two_opt_swap(action_path, path, v1, v2, gs):
     new_path[v1] = (new_path[v1][0], len(first_interval))
     new_path[v2] = (new_path[v2][0], len(second_interval))
     
-    return new_action_path, new_path
+    return new_action_path, new_path, break_point1[0]
 
-def walk_path(action_path, problem: q1c_problem):
+def walk_path(action_path, problem: q1c_problem, starting_index):
 
     pacman_position, food_remaining = problem.getStartState()
     x,y = pacman_position
-    distance = 0
+    distance = starting_index
     
-    for action in action_path:
+    for i in range(starting_index, len(action_path)):
+        action = action_path[i]
         dx,dy = Actions.directionToVector(action)
         x,y = int(x + dx), int(y + dy)
         distance += 1
@@ -110,6 +111,17 @@ def walk_path(action_path, problem: q1c_problem):
 
             if len(food_remaining) <= 0:
                 break
+
+    # for action in action_path:
+    #     dx,dy = Actions.directionToVector(action)
+    #     x,y = int(x + dx), int(y + dy)
+    #     distance += 1
+
+    #     if (x,y) in food_remaining:
+    #         food_remaining.remove((x,y))
+
+    #         if len(food_remaining) <= 0:
+    #             break
     
     return action_path[:distance]
 
@@ -126,20 +138,19 @@ def q1c_solver(problem: q1c_problem):
 
     while improvement:
         improvement = False
-        for i in range(len(paths)):
-            for j in range(i + 1, len(paths)):
-                if i < len(paths)-1:
-                    new_action, new_path = two_opt_swap(action_paths, paths, i, j, problem.startingGameState)
-                    walk_route = walk_path(new_action, problem)
-                    if len(walk_route) < best_distance:
-                        best_distance = len(walk_route)
-                        action_paths = walk_route
-                        paths = new_path
-                        improvement = True
-                        break  # Exit the inner loop
+        for i in range(len(paths) -5):
+            for j in range(i + 5, len(paths)):
+                new_action, new_path, starting_index = two_opt_swap(action_paths, paths, i, j, problem.startingGameState)
+                walk_route = walk_path(new_action, problem, starting_index)
+                if len(walk_route) < best_distance:
+                    best_distance = len(walk_route)
+                    action_paths = walk_route
+                    paths = new_path
+                    improvement = True
+                    break  # Exit the inner loop
 
-                    if time.time() - start > 9.88:
-                        return action_paths
+                if time.time() - start > 9.89:
+                    return action_paths
                 if improvement:
                     break  # Exit the outer loop
 
