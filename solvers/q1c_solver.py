@@ -92,7 +92,7 @@ def two_opt_swap(action_path, path, v1, v2, gs):
     new_path[v1] = (new_path[v1][0], len(first_interval))
     new_path[v2] = (new_path[v2][0], len(second_interval))
     
-    return new_action_path, new_path
+    return new_action_path, new_path, break_point1[0]
 
 def walk_path(action_path, problem: q1c_problem, starting_index):
 
@@ -127,12 +127,25 @@ def q1c_solver(problem: q1c_problem):
 
     while improvement:
         improvement = False
-        for i in range(len(paths)-1):
+        for i in range(1,len(paths)):
+            new_action, new_path = remove_a_dot(action_paths, paths, i, problem.startingGameState)
+            walk_route = walk_path(new_action, problem, i)
+            if (problem.unreachable and (best_distance - len(walk_route) > 5)) or (not problem.unreachable and (best_distance - len(walk_route) > 250)):
+                    best_distance = len(walk_route)
+                    action_paths = walk_route
+                    paths = new_path
+                    improvement = True
+                    break  
+    
+    improvement = True
+    while improvement:
+        improvement = False
+        for i in range(1,len(paths)-1):
             for j in range(i + 1, len(paths)):
                 space_dist = distance_two_point(paths[i][0], paths[j][0])
-                if  5 < space_dist < 30:
-                    new_action, new_path = two_opt_swap(action_paths, paths, i, j, problem.startingGameState)
-                    walk_route = walk_path(new_action, problem,i)
+                if  space_dist < 10:
+                    new_action, new_path,starting = two_opt_swap(action_paths, paths, i, j, problem.startingGameState)
+                    walk_route = walk_path(new_action, problem,starting)
                     if len(walk_route) < best_distance:
                         best_distance = len(walk_route)
                         action_paths = walk_route
@@ -153,5 +166,29 @@ def distance_two_point(p1: tuple[int, int], p2:tuple[int, int]):
     x2,y2 = p2
 
     return max(abs(x2-x1), abs(y2-y1))
+
+def remove_a_dot(action_path, path, index, gs):
+
+    new_actions = action_path[:]
+    new_path: list = path[:]
+
+    start_action = 0
+    for i in range(index-1):
+        start_action += path[i][1]
+    end_action = start_action + path[index-1][1] + path[index][1]
+
+    if index < len(path)-1:
+        distance_prob = q1a_problem(gs)
+        distance_prob.start_pos = path[index-1][0]
+        distance_prob.goalPoint = path[index+1][0]
+        new_interval_path = q1a_solver(distance_prob)
+    else: # if the point to remove is the at the end of path
+        new_interval_path = []
+
+    new_path[index-1] = (new_path[index-1][0], len(new_interval_path))
+    new_path.pop(index)
+    new_actions[start_action:end_action] = new_interval_path
+    print(new_actions)
+    return new_actions, new_path
 
 
