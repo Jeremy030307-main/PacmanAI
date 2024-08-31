@@ -124,13 +124,17 @@ def q1c_solver(problem: q1c_problem):
     # return action_paths
     best_distance = len(action_paths)
     improvement = True
+    penalty_threshold = 0.05 * max(problem.walls.height, problem.walls.width)
+    large_scale_penalty = 500 * penalty_threshold
 
     while improvement:
         improvement = False
         for i in range(1,len(paths)):
             new_action, new_path = remove_a_dot(action_paths, paths, i, problem.startingGameState)
             walk_route = walk_path(new_action, problem, i)
-            if (problem.unreachable and (best_distance - len(walk_route) > 5)) or (not problem.unreachable and (best_distance - len(walk_route) > 250)):
+            if (problem.unreachable and (best_distance - len(walk_route) > penalty_threshold)) or \
+                           (not problem.unreachable and (best_distance - len(walk_route) > large_scale_penalty)):
+
                     best_distance = len(walk_route)
                     action_paths = walk_route
                     paths = new_path
@@ -143,7 +147,7 @@ def q1c_solver(problem: q1c_problem):
         for i in range(1,len(paths)-1):
             for j in range(i + 1, len(paths)):
                 space_dist = distance_two_point(paths[i][0], paths[j][0])
-                if  space_dist < 10 or space_dist > max(problem.walls.height, problem.walls.width) * 0.7:
+                if space_dist < penalty_threshold or space_dist > max(problem.walls.height, problem.walls.width) * 0.7:
                     new_action, new_path,starting = two_opt_swap(action_paths, paths, i, j, problem.startingGameState)
                     walk_route = walk_path(new_action, problem,starting)
                     if len(walk_route) < best_distance:
