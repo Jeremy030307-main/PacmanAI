@@ -140,8 +140,8 @@ def q1c_solver(problem: q1c_problem):
         improvement = False
         for i in range(1,len(paths)-1):
             for j in range(i + 1, len(paths)):
-                space_dist = distance_two_point(paths[i][0], paths[j][0])
-                if space_dist < max(problem.walls.height, problem.walls.width) * 0.1 or space_dist > max(problem.walls.height, problem.walls.width) * 0.5:
+                space_dist = util.manhattanDistance(paths[i][0], paths[j][0])
+                if space_dist < max(problem.walls.height, problem.walls.width) * 0.2 or space_dist > max(problem.walls.height, problem.walls.width) * 0.5:
                     new_action, new_path,starting = two_opt_swap(action_paths, paths, i, j, problem.startingGameState, lookup)
                     walk_route = walk_path(new_action, problem,starting)
                     if len(walk_route) < best_distance:
@@ -157,13 +157,6 @@ def q1c_solver(problem: q1c_problem):
                 break  # Exit the outer loop
 
     return action_paths
-    
-
-def distance_two_point(p1: tuple[int, int], p2:tuple[int, int]):
-    x1,y1 = p1
-    x2,y2 = p2
-
-    return max(abs(x2-x1), abs(y2-y1))
 
 def remove_a_dot(action_path, path, index, gs):
 
