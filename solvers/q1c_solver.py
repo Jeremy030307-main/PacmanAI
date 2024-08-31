@@ -130,7 +130,7 @@ def q1c_solver(problem: q1c_problem):
         for i in range(len(paths)-1):
             for j in range(i + 1, len(paths)):
                 space_dist = distance_two_point(paths[i][0], paths[j][0])
-                if space_dist < 6:
+                if space_dist < 10:
                     new_action, new_path = two_opt_swap(action_paths, paths, i, j, problem.startingGameState)
                     walk_route = walk_path(new_action, problem,i)
                     if len(walk_route) < best_distance:
