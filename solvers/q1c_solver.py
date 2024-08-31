@@ -18,8 +18,7 @@ from solvers.q1a_solver import q1a_solver
 
 from game import Directions, Actions
 import util
-from game import Grid
-import time, collections
+import time
 
 def greedy_path(problem: q1c_problem):
 
@@ -112,6 +111,21 @@ def walk_path(action_path, problem: q1c_problem, starting_index):
             
     return action_path[:distance]
 
+def heuristic_two_opt_swap(action_path, path, v1, v2):
+
+    path_length = len(action_path) - path[v1][1] - path[v2][1]
+
+    first_interval = util.manhattanDistance(path[v1][0],path[v2][0])
+
+    second_interval = 0
+    if v2 < len(path)-1:
+        second_interval = util.manhattanDistance(path[v1+1][0],path[v2+1][0])
+
+    print(len(action_path),path[v1][1],path[v2][1], path_length + first_interval + second_interval)
+    
+    return path_length + first_interval + second_interval
+
+
 def q1c_solver(problem: q1c_problem):
 
     start = time.time()
@@ -126,8 +140,8 @@ def q1c_solver(problem: q1c_problem):
         for i in range(1,len(paths)):
             new_action, new_path = remove_a_dot(action_paths, paths, i, problem.startingGameState)
             walk_route = walk_path(new_action, problem, i)
-            if (problem.unreachable and (best_distance - len(walk_route) > 8)) or \
-                           (not problem.unreachable and (best_distance - len(walk_route) > 300)):
+            if (problem.unreachable and (best_distance - len(walk_route) > 10)) or \
+                           (not problem.unreachable and (best_distance - len(walk_route) > 500)):
 
                     best_distance = len(walk_route)
                     action_paths = walk_route
@@ -140,8 +154,12 @@ def q1c_solver(problem: q1c_problem):
         improvement = False
         for i in range(1,len(paths)-1):
             for j in range(i + 1, len(paths)):
-                space_dist = util.manhattanDistance(paths[i][0], paths[j][0])
-                if space_dist < max(problem.walls.height, problem.walls.width) * 0.2 or space_dist > max(problem.walls.height, problem.walls.width) * 0.5:
+
+                if time.time() - start > 9.85:
+                    return action_paths
+                
+                estimate = heuristic_two_opt_swap(action_paths, paths, i, j)
+                if estimate < best_distance:
                     new_action, new_path,starting = two_opt_swap(action_paths, paths, i, j, problem.startingGameState, lookup)
                     walk_route = walk_path(new_action, problem,starting)
                     if len(walk_route) < best_distance:
@@ -150,9 +168,7 @@ def q1c_solver(problem: q1c_problem):
                         paths = new_path
                         improvement = True
                         break  # Exit the inner loop
-
-                if time.time() - start > 9.88:
-                    return action_paths
+                
             if improvement:
                 break  # Exit the outer loop
 
@@ -179,5 +195,4 @@ def remove_a_dot(action_path, path, index, gs):
     new_path[index-1] = (new_path[index-1][0], len(new_interval_path))
     new_path.pop(index)
     new_actions[start_action:end_action] = new_interval_path
-    print(new_actions)
     return new_actions, new_path

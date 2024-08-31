@@ -35,28 +35,29 @@ class Node:
         self.visited: bool = False
 
     def __eq__(self, value: 'Node') -> bool:
-        return self.f == value.f
+        return (self.f,self.g) == (value.f,value.g)
 
     def __ne__(self, value: 'Node') -> bool:
-        return self.f != value.f
+        return (self.f,self.g) != (value.f,value.g)
 
     def __lt__(self, value: 'Node'): 
-        return self.f < value.f
+        return (self.f,self.g) < (value.f,value.g)
     
     def __gt__(self, value: 'Node'): 
-        return self.f > value.f
+        return (self.f,self.g) > (value.f,value.g)
     
     def __ge__(self, value: 'Node'): 
-        return self.f >= value.f
+        return (self.f,self.g) >= (value.f,value.g)
     
     def __le__(self, value: 'Node'): 
-        return self.f <= value.f
+        return (self.f,self.g) <=(value.f,value.g)
 
 class AStarData:
     # YOUR CODE HERE
     def __init__(self):
         self.open_list: list[Node] = []
         self.nodes: dict[tuple, Node] = {}
+        self.closed_set: set[tuple] = set()
         self.terminate = False
 
 def astar_initialise(problem: q1a_problem):
@@ -89,10 +90,10 @@ def astar_loop_body(problem: q1a_problem, astarData: AStarData):
         # get the node with the lower f_value                
         hq.heapify(astarData.open_list)
         current_node = astarData.open_list.pop(0)
-        if current_node.visited:
-            continue
 
-        current_node.visited = True
+        if current_node.state in astarData.closed_set:
+            continue
+        astarData.closed_set.add(current_node.state)
 
         # check if the current position is the goal state
         if problem.isGoalState(current_node.state):
@@ -101,29 +102,19 @@ def astar_loop_body(problem: q1a_problem, astarData: AStarData):
             return astarData.terminate, actions
 
         for next_state, action, cost in problem.getSuccessors(current_node.state):
-
-            # computer the new g_value, h_value and f_value
+            if next_state in astarData.closed_set:
+                continue
+            
             new_g = current_node.g + cost
-            new_h = astar_heuristic(next_state, problem.goalPoint)
-            new_f = new_g + new_h
-
-            # First check: is the successor already crated a node
-            next_state_node = astarData.nodes.get(next_state)
-
-            if next_state_node is None:  # if there are no node associate with this state, created one 
-                next_state_node = Node(state=next_state)
-                astarData.nodes[next_state] = next_state_node
-
-            # update the h_value, it parent node and the action from parent node to this node (also known as node redirection)
-            if astarData.nodes[next_state].f > new_f:
-                next_state_node.f = new_f
+            
+            if next_state not in astarData.nodes or new_g < astarData.nodes[next_state].g:
+                next_state_node = astarData.nodes.get(next_state, Node(next_state))
                 next_state_node.g = new_g
-                next_state_node.actionTaken = action
+                next_state_node.f = new_g + astar_heuristic(next_state, problem.goalPoint)
                 next_state_node.parent = current_node
-
-                if next_state_node.visited == True:
-                    next_state_node.visited == False
-
+                next_state_node.actionTaken = action
+                
+                astarData.nodes[next_state] = next_state_node
                 hq.heappush(astarData.open_list, next_state_node)
 
     return astarData.terminate, []
