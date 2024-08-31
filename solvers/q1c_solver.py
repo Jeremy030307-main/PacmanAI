@@ -150,6 +150,8 @@ def q1c_solver(problem: q1c_problem):
     while True:
         # Generate a random neighboring solution
         i, j = generate_random_swap_indices(len(paths))
+        if distance_two_point(paths[i][0], paths[j][0]) > 5:
+            continue
         
         new_action, new_path = two_opt_swap(action_paths, paths, i, j, problem.startingGameState)
         walk_route = walk_path(new_action, problem,i)
@@ -172,7 +174,7 @@ def distance_two_point(p1: tuple[int, int], p2:tuple[int, int]):
     return max(abs(x2-x1), abs(y2-y1))
 
 def generate_random_swap_indices(length):
-    i = random.randint(1, length - 3)
-    j = random.randint(i + 1, length - 1)
+    i = random.randint(1, length - 2)
+    j = random.randint(i + 1, length-1)
     return i, j
 
