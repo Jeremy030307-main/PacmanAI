@@ -138,8 +138,9 @@ def q1c_solver(problem: q1c_problem):
 
     while improvement:
         improvement = False
-        for i in range(len(paths) -5):
-            for j in range(i + 5, len(paths)):
+        length = int(len(paths) / 20)
+        for i in range(len(paths)-length):
+            for j in range(i + length, len(paths)):
                 new_action, new_path, starting_index = two_opt_swap(action_paths, paths, i, j, problem.startingGameState)
                 walk_route = walk_path(new_action, problem, starting_index)
                 if len(walk_route) < best_distance:
