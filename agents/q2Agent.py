@@ -6,10 +6,14 @@ from game import Actions, Agent, Directions, Grid, AgentState
 from logs.search_logger import log_function
 from pacman import GameState
 from util import manhattanDistance
-	 
-def scoreEvaluationFunction(currentGameState: GameState, searchData: 'SearchData', in_dead_end, in_tunnel):
+from enum import Enum
+from collections import namedtuple
 
-    print(in_dead_end, in_tunnel)
+from enum import Enum
+from collections import namedtuple
+
+def scoreEvaluationFunction(currentGameState: GameState, maze_info: list[list['PathInfo']]):
+
     # initial score 
     score = currentGameState.getScore()
 
@@ -49,48 +53,47 @@ def scoreEvaluationFunction(currentGameState: GameState, searchData: 'SearchData
     capsuleDistances = [manhattanDistance(pacman_pos, capsule) for capsule in capsules]
     nearestCapsuleDist = min(capsuleDistances) if capsuleDistances else float('inf')
     
-    # check is pacman already in a dead end path
-    if in_dead_end:  
-        print("Enter")
-        dead_end_start_pos, dist_walk = in_dead_end
-        move_needed = len(searchData.dead_end[dead_end_start_pos])*2 - dist_walk + 2  # this is the move needed by pacman to reach the dead end exit
-        priority = 8
+    # # check is pacman already in a dead end path
+    # if in_dead_end:  
+    #     dead_end_start_pos, dist_walk = in_dead_end
+    #     move_needed = len(searchData.dead_end[dead_end_start_pos])*2 - dist_walk + 2  # this is the move needed by pacman to reach the dead end exit
+    #     priority = 8
 
-    # check is pacman already in a tunnel
-    elif in_tunnel:  
-        tunnel_start, tunnel_end, dist_walk = in_tunnel
-        move_needed = max(len(searchData.tunnel[tunnel_end]) - dist_walk+1, dist_walk+1) # the maximmum distance to exit the tunnel between both opening
-        priority = 6
+    # # check is pacman already in a tunnel
+    # elif in_tunnel:  
+    #     tunnel_start, tunnel_end, dist_walk = in_tunnel
+    #     move_needed = max(len(searchData.tunnel[tunnel_end]) - dist_walk+1, dist_walk+1) # the maximmum distance to exit the tunnel between both opening
+    #     priority = 6
 
-    # check is pacman on the start of the dead end path
-    elif searchData.dead_end.get(pacman_pos):  
-        dead_end_path = searchData.dead_end.get(pacman_pos)
-        move_needed = 2 * (len(dead_end_path)-1) + 1
-        priority = 5
+    # # check is pacman on the start of the dead end path
+    # elif searchData.dead_end.get(pacman_pos):  
+    #     dead_end_path = searchData.dead_end.get(pacman_pos)
+    #     move_needed = 2 * (len(dead_end_path)-1) + 1
+    #     priority = 5
     
-    # check is pacman on the start of the tunnel
-    elif searchData.tunnel.get(pacman_pos):
-        tunnel_path = searchData.tunnel.get(pacman_pos)
-        move_needed = len(tunnel_path)
-        priority = 3
+    # # check is pacman on the start of the tunnel
+    # elif searchData.tunnel.get(pacman_pos):
+    #     tunnel_path = searchData.tunnel.get(pacman_pos)
+    #     move_needed = len(tunnel_path)
+    #     priority = 3
 
-    # check is pacman on a corner
-    elif pacman_pos in searchData.corner:
-        move_needed = 1
-        priority = 2
+    # # check is pacman on a corner
+    # elif pacman_pos in searchData.corner:
+    #     move_needed = 1
+    #     priority = 2
    
-    else:
-        move_needed = 0
-        priority = 1
+    # else:
+    #     move_needed = 0
+    #     priority = 1
     
-    if nearest_ghost_dist > move_needed:
-        score += priority * (nearest_ghost_dist-move_needed)
-    else:
-        score += (-priority) * move_needed * (move_needed-nearest_ghost_dist)
-
     newScaredTimes = [ghostState.scaredTimer for ghostState in ghost_state]
     sumScaredTimes = sum(newScaredTimes)
     sumGhostDistance = sum (ghost_dist)
+
+    # if nearest_ghost_dist > move_needed or sumScaredTimes > 0:
+    #     score += priority * nearest_ghost_dist
+    # else:
+    #     score -= priority * nearest_ghost_dist
 
     if sumScaredTimes > 0:    
         score +=   sumScaredTimes + (-1 * len(capsules)) + (-1 * sumGhostDistance)
@@ -99,25 +102,13 @@ def scoreEvaluationFunction(currentGameState: GameState, searchData: 'SearchData
 
     return score
 
-class SearchData:
-
-    def __init__(self) -> None:
-        self.first_time = False  # indicate that this is the first time the game call for agent action
-        self.dead_end: dict = None
-        self.tunnel: dict = None
-        self.corner: set = None
-
-        # this is the state on weather the pacman is now in a tunnel or in a path that lead to death_end
-        self.in_dead_end = False
-        self.in_tunnel = False
-
 class Q2_Agent(Agent):
 
     def __init__(self, evalFn = 'scoreEvaluationFunction', depth = '3'):
         self.index = 0 # Pacman is always agent index 0
         self.evaluationFunction = util.lookup(evalFn, globals())
         self.depth = int(depth)
-        self.data = SearchData()
+        self.maze_info: list[list[PathInfo]] = None
 
     @log_function
     def getAction(self, gameState: GameState):
@@ -139,10 +130,8 @@ class Q2_Agent(Agent):
         logger = logging.getLogger('root')
         logger.info('MinimaxAgent')
 
-        if self.data.dead_end == None:
-            self.data.dead_end = {} ;self.data.tunnel = {} ; self.data.corner = set()
+        if self.maze_info is None:
             self.check_maze_info(gameState)
-            self.data.first_time = True
         
         actions = gameState.getLegalActions(0)
         currentScore = float('-inf')
@@ -152,51 +141,14 @@ class Q2_Agent(Agent):
 
         for action in actions:
             nextState = gameState.generateSuccessor(0,action)
-
-            new_in_dead_end = self.data.in_dead_end
-            if new_in_dead_end:
-                start, walk_dist = new_in_dead_end
-                path = self.data.dead_end[start]
-                if len(path) > 0:
-                    if walk_dist + 1 < len(path) and path[walk_dist+1] == nextState.getPacmanPosition():
-                        new_in_dead_end = (start, walk_dist+1)
-                    elif walk_dist - 1 >= 0 and path[walk_dist-1] == nextState.getPacmanPosition():
-                        new_in_dead_end = (start, walk_dist-1)
-                    else:
-                        new_in_dead_end = False
-            else:
-                path = self.data.dead_end.get(nextState.getPacmanPosition())
-
-                if path is not None:
-                    new_in_dead_end = (nextState.getPacmanPosition(), 0)
-            
-            new_in_tunnel = self.data.in_tunnel
-            if new_in_tunnel:
-                start,end, walk_dist = new_in_tunnel
-                path = self.data.tunnel[start]
-                if len(path) > 0:
-                    if walk_dist + 1 < len(path) and path[walk_dist+1] == nextState.getPacmanPosition():
-                        new_in_tunnel = (start,end, walk_dist+1)
-                    elif walk_dist - 1 >= 0 and path[walk_dist-1] == nextState.getPacmanPosition():
-                        new_in_tunnel = (start,end, walk_dist-1)
-                    else:
-                        new_in_tunnel = False
-            else:
-                path = self.data.tunnel.get(nextState.getPacmanPosition())
-
-                if path is not None:
-                    new_in_tunnel = (nextState.getPacmanPosition(), path[-1], 0)
                     
             # Next level is a min level. Hence calling min for successors of the root.
-            score, updated_in_dead_end, updated_in_tunnel = \
-                self.min_value(nextState,0,alpha,beta, new_in_dead_end, new_in_tunnel)
+            score = self.min_value(nextState,0,alpha,beta)
 
             # Choosing the action which is Maximum of the successors.
             if score > currentScore:
                 returnAction = action
                 currentScore = score
-                self.data.in_dead_end = updated_in_dead_end
-                self.data.in_tunnel = updated_in_tunnel
 
             # Updating alpha value at root.    
             if score > beta:
@@ -206,13 +158,13 @@ class Q2_Agent(Agent):
 
         return returnAction
 
-    def max_value(self, game_state: GameState, depth: int, alpha: int, beta:int, in_dead_end, in_tunnel):
+    def max_value(self, game_state: GameState, depth: int, alpha: int, beta:int):
 
         currDepth = depth + 1
 
         # Check for termina state
         if game_state.isWin() or game_state.isLose() or currDepth >= self.depth:  
-            return self.evaluationFunction(game_state, self.data, in_dead_end, in_tunnel), in_dead_end, in_tunnel
+            return self.evaluationFunction(game_state)
     
         max_value = float('-inf')
         actions = game_state.getLegalActions(0)
@@ -221,128 +173,46 @@ class Q2_Agent(Agent):
             # generate the successor game state after taking this action
             successor= game_state.generateSuccessor(0,action)
 
-            new_in_dead_end = in_dead_end
-            if in_dead_end:
-                start, walk_dist = in_dead_end
-                path = self.data.dead_end[start]
-                if len(path) > 0:
-                    if walk_dist + 1 < len(path) and path[walk_dist+1] == successor.getPacmanPosition():
-                        new_in_dead_end = (start, walk_dist+1)
-                    elif walk_dist - 1 >= 0 and path[walk_dist-1] == successor.getPacmanPosition():
-                        new_in_dead_end = (start, walk_dist-1)
-                    else:
-                        new_in_dead_end = False
-            else:
-                path = self.data.dead_end.get(successor.getPacmanPosition())
-
-                if path is not None:
-                    new_in_dead_end = (successor.getPacmanPosition(), 0)
-            
-            new_in_tunnel = in_tunnel
-            if in_tunnel:
-                start,end, walk_dist = in_tunnel
-                path = self.data.tunnel[start]
-                if len(path) > 0:
-                    if walk_dist + 1 < len(path) and path[walk_dist+1] == successor.getPacmanPosition():
-                        new_in_tunnel = (start,end, walk_dist+1)
-                    elif walk_dist - 1 >= 0 and path[walk_dist-1] == successor.getPacmanPosition():
-                        new_in_tunnel = (start,end, walk_dist-1)
-                    else:
-                        new_in_tunnel = False
-            else:
-                path = self.data.tunnel.get(successor.getPacmanPosition())
-
-                if path is not None:
-                    new_in_tunnel = (successor.getPacmanPosition(), path[-1], 0)
-
-
-            updated_max, updated_in_dead_end, updated_in_tunnel = self.min_value(successor, currDepth, alpha, beta, new_in_dead_end, new_in_tunnel)
-
-            if updated_max > max_value:
-                max_value = updated_max
-                new_in_dead_end = updated_in_dead_end
-                new_in_tunnel = updated_in_tunnel
+            max_value = max(max_value, self.min_value(successor, currDepth, alpha, beta))
 
             if max_value > beta:
-                return max_value, new_in_dead_end, new_in_tunnel
+                return max_value
             
             alpha = max(alpha,max_value)
 
-        return max_value, new_in_dead_end, new_in_tunnel
+        return max_value
 
-    def min_value(self, game_state: GameState, depth: int, alpha: int, beta:int, in_dead_end, in_tunnel, agent_index = 1):
+    def min_value(self, game_state: GameState, depth: int, alpha: int, beta:int, agent_index = 1):
 
         # Check for terminal state
         if game_state.isWin() or game_state.isLose():
-            return self.evaluationFunction(game_state, self.data, in_dead_end, in_tunnel), in_dead_end, in_tunnel
+            return self.evaluationFunction(game_state)
         
         minvalue = float('inf')
         actions = game_state.getLegalActions(agent_index)
         for action in actions:
             successor= game_state.generateSuccessor(agent_index,action)
 
-            new_in_dead_end = in_dead_end
-            if in_dead_end:
-                start, walk_dist = in_dead_end
-                path = self.data.dead_end[start]
-                if len(path) > 0:
-                    if walk_dist + 1 < len(path) and path[walk_dist+1] == successor.getPacmanPosition():
-                        new_in_dead_end = (start, walk_dist+1)
-                    elif walk_dist - 1 >= 0 and path[walk_dist-1] == successor.getPacmanPosition():
-                        new_in_dead_end = (start, walk_dist-1)
-                    else:
-                        new_in_dead_end = False
-            else:
-                path = self.data.dead_end.get(successor.getPacmanPosition())
-
-                if path is not None:
-                    new_in_dead_end = (successor.getPacmanPosition(), 0)
-            
-            new_in_tunnel = in_tunnel
-            if in_tunnel:
-                start,end, walk_dist = in_tunnel
-                path = self.data.tunnel[start]
-                if len(path) > 0:
-                    if walk_dist + 1 < len(path) and path[walk_dist+1] == successor.getPacmanPosition():
-                        new_in_tunnel = (start,end, walk_dist+1)
-                    elif walk_dist - 1 >= 0 and path[walk_dist-1] == successor.getPacmanPosition():
-                        new_in_tunnel = (start,end, walk_dist-1)
-                    else:
-                        new_in_tunnel = False
-            else:
-                path = self.data.tunnel.get(successor.getPacmanPosition())
-
-                if path is not None:
-                    new_in_tunnel = (successor.getPacmanPosition(), path[-1], 0)
-
             if agent_index == (game_state.getNumAgents()-1):
-                updated_minvalue, updated_in_dead_end, updated_in_tunnel = self.max_value(successor,depth,alpha,beta, new_in_dead_end, new_in_tunnel)
+                minvalue = min(minvalue, self.max_value(successor,depth,alpha,beta))
 
-                if updated_minvalue < minvalue:
-                    minvalue = updated_minvalue
-                    new_in_dead_end = updated_in_dead_end
-                    new_in_tunnel = updated_in_tunnel
             else:
-                updated_minvalue, updated_in_dead_end, updated_in_tunnel = \
-                    self.min_value(successor,depth,alpha,beta,new_in_dead_end, new_in_tunnel, agent_index+1)
+                minvalue = min(minvalue,self.min_value(successor,depth,alpha,beta, agent_index+1))
                 
-                if updated_minvalue < minvalue:
-                    minvalue = updated_minvalue
-                    new_in_dead_end = updated_in_dead_end
-                    new_in_tunnel = updated_in_tunnel
-            
             if minvalue <= alpha:
-                return minvalue, new_in_dead_end, new_in_tunnel
+                return minvalue
             
             beta = min(beta,minvalue)
 
-        return minvalue, new_in_dead_end, new_in_tunnel
+        return minvalue
     
     def check_maze_info(self, game_state: GameState):
         
         walls: Grid = game_state.getWalls()
         height = walls.height
         width = walls.width
+
+        self.maze_info = [[None for _ in range(height)] for _ in range(width)]
 
         all_directions = [(0, 1), (1, 0), (-1, 0), (0, -1)]
         visited = [[False for _ in range(height)] for _ in range(width)]
@@ -362,9 +232,9 @@ class Q2_Agent(Agent):
 
             # Check weather the current position is a dead end or corner
             if is_dead_end:
-                self.data.dead_end[(x,y)] = []
+                self.maze_info[x][y] =  MazeState.DEAD_END(0, PathInfo([(x,y)]))
             elif is_corner:
-                self.data.corner.add((x,y))
+                self.maze_info[x][y] = MazeState.CORNER()
             elif is_corridor:
                 self.follow_corridor((x,y), visited, game_state, stack)
 
@@ -435,25 +305,65 @@ class Q2_Agent(Agent):
                     if is_corner or is_corridor:
                         stack.append(((next_x, next_y), path[:]))
                     elif is_dead_end:
+
                         new_path = path[:]
                         new_path.append((next_x, next_y))
-                        self.data.dead_end[new_path[0]] = new_path
-                        if gs.getPacmanPosition() in path:
-                            self.data.in_dead_end = (new_path[0], new_path.index(gs.getPacmanPosition()))
-                        
+                        new_path_info = PathInfo(new_path)
+                        for index, (x,y) in enumerate(new_path):
+                            self.maze_info[x][y] = MazeState.DEAD_END(index, new_path_info)
+
                     else:
                         ori_stack.append((next_x, next_y))
+
                         if len(path) > 1:
                             new_path = path[:]
-
-                            if self.data.tunnel.get(path[0]):
-                                new_path = path[::-1] + self.data.tunnel[path[0]][1:]
-                                self.data.tunnel.pop(path[0])
-                                self.data.tunnel[new_path[0]] = new_path[:]
+                            new_path_info = PathInfo(new_path)
+                            if self.maze_info[new_path[0][0]][new_path[0][1]] is not None:
+                                # get the path info of the exiting path 
+                                exist_index = self.maze_info[new_path[0][0]][new_path[0][1]].index
+                                existing_path_info: PathInfo = self.maze_info[new_path[0][0]][new_path[0][1]].path_info
+                                new_path = existing_path_info.path + new_path[1:]
+                                existing_path_info.update(new_path)
+                                
+                                for index, (x,y) in enumerate(new_path):
+                                    self.maze_info[x][y] = MazeState.TUNNEL(exist_index+index, existing_path_info)
                             else:
-                                self.data.tunnel[new_path[0]] = new_path[:]
+                                new_path.reverse()
+                                for index, (x,y) in enumerate(new_path):
+                                    self.maze_info[x][y] = MazeState.TUNNEL(index, new_path_info)
 
-                            self.data.tunnel[new_path[-1]] = new_path[:]
+class MazeState(Enum):
+    CORNER = 1
+    TUNNEL = 2
+    DEAD_END = 3
 
-                            if gs.getPacmanPosition() in new_path:
-                                self.data.in_tunnel = (new_path[0],new_path[-1], new_path.index(gs.getPacmanPosition()))
+    def __call__(self, index=None, path: 'PathInfo' = None):
+        return MazeStateInstance(self, index, path)
+
+class PathInfo:
+
+    def __init__(self, path: list[tuple[int, int]]) -> None:
+        self.path = path
+        self.start = path[0]
+        self.end = path[-1]
+        self.length = len(path)
+    
+    def update(self, path: list[tuple[int, int]]):
+        self.path = path
+        self.start = path[0]
+        self.end = path[-1]
+        self.length = len(path)
+
+class MazeStateInstance:
+    def __init__(self, status, index, path_info):
+        self.status = status
+        self.index = index
+        self.path_info = path_info
+
+    def __eq__(self, other):
+        # Compare to another StatusInstance or a Status enum member
+        if isinstance(other, MazeStateInstance):
+            return self.status == other.status and self.path_info == other.path_info and self.index == other.index
+        elif isinstance(other, MazeState):
+            return self.status == other
+        return False
