@@ -7,12 +7,10 @@ from logs.search_logger import log_function
 from pacman import GameState
 from util import manhattanDistance
 from enum import Enum
-from collections import namedtuple
+from problems.q1b_problem import q1b_problem
+from solvers.q1b_solver import q1b_solver
 
-from enum import Enum
-from collections import namedtuple
-
-def scoreEvaluationFunction(currentGameState: GameState):
+def scoreEvaluationFunction(currentGameState: GameState, maze_info: list[list['MazeStateInstance']]):
 
     # initial score 
     score = currentGameState.getScore()
@@ -29,76 +27,64 @@ def scoreEvaluationFunction(currentGameState: GameState):
     # evaluation of score for the curren state
     number_of_non_food_pos = len(currentGameState.getFood().asList(False))  
 
-    reciprocalfoodDistance = 0
-    if sum(food_dist) > 0:
-        reciprocalfoodDistance = 1.0 / sum(food_dist)
-        
-    score += reciprocalfoodDistance + number_of_non_food_pos
+    if food_dist:
+        closest_food_distance = min(food_dist)
+        reciprocal_closest_food_distance = 1.0 / closest_food_distance
+        score += reciprocal_closest_food_distance * 10  # Increase weight on food proximity
+
+    # Additional bonus for the number of remaining food pellets
+    score += 100.0 / (number_of_non_food_pos + 1)  # Stronger encouragement to clear the board
 
     # ----------------------------------- Reward and Penalty Section (Ghost) -----------------------------------
     ghost_state: list[AgentState] = currentGameState.getGhostStates()
-    capsules = currentGameState.getCapsules()
-
-    # Manhattan distance from pacman to each ghost, and also keep track of the closest ghost
-    nearest_ghost_dist = float('inf')
     ghost_dist = [manhattanDistance(pacman_pos, ghost.getPosition()) for ghost in ghost_state]
+    nearest_ghost_dist =  min(ghost_dist) if ghost_dist else float('inf')
 
-    for ghost in ghost_state:
-        curr_dist = manhattanDistance(pacman_pos, ghost.getPosition())
-        ghost_dist.append(curr_dist)
-        if curr_dist < nearest_ghost_dist:
-            nearest_ghost_dist = curr_dist
-
+    capsules = currentGameState.getCapsules()
     # Distance to nearest capsule (power pellet)
     capsuleDistances = [manhattanDistance(pacman_pos, capsule) for capsule in capsules]
     nearestCapsuleDist = min(capsuleDistances) if capsuleDistances else float('inf')
     
-    # # check is pacman already in a dead end path
-    # if in_dead_end:  
-    #     dead_end_start_pos, dist_walk = in_dead_end
-    #     move_needed = len(searchData.dead_end[dead_end_start_pos])*2 - dist_walk + 2  # this is the move needed by pacman to reach the dead end exit
-    #     priority = 8
+    # Ghost handling based on scared state and proximity
+    scared_times = [ghost.scaredTimer for ghost in ghost_state]
+    total_scared_time = sum(scared_times)
 
-    # # check is pacman already in a tunnel
-    # elif in_tunnel:  
-    #     tunnel_start, tunnel_end, dist_walk = in_tunnel
-    #     move_needed = max(len(searchData.tunnel[tunnel_end]) - dist_walk+1, dist_walk+1) # the maximmum distance to exit the tunnel between both opening
-    #     priority = 6
+    if total_scared_time > 0:
+        # If ghosts are scared, focus on chasing them
+        score += total_scared_time - sum(ghost_dist)
+    else:
+        # Otherwise, focus on avoiding them
+        score -= nearest_ghost_dist
 
-    # # check is pacman on the start of the dead end path
-    # elif searchData.dead_end.get(pacman_pos):  
-    #     dead_end_path = searchData.dead_end.get(pacman_pos)
-    #     move_needed = 2 * (len(dead_end_path)-1) + 1
-    #     priority = 5
-    
-    # # check is pacman on the start of the tunnel
-    # elif searchData.tunnel.get(pacman_pos):
-    #     tunnel_path = searchData.tunnel.get(pacman_pos)
-    #     move_needed = len(tunnel_path)
-    #     priority = 3
+    # ----------------------------------- Reward and Penalty Section (Maze State) -----------------------------------
 
-    # # check is pacman on a corner
-    # elif pacman_pos in searchData.corner:
-    #     move_needed = 1
-    #     priority = 2
-   
-    # else:
-    #     move_needed = 0
-    #     priority = 1
-    
-    newScaredTimes = [ghostState.scaredTimer for ghostState in ghost_state]
-    sumScaredTimes = sum(newScaredTimes)
-    sumGhostDistance = sum (ghost_dist)
+    # get the state of the pacman position on the maze
+    current_pos_state: MazeStateInstance = maze_info[pacman_pos[0]][pacman_pos[1]]
+    escape_move = 0
+    priority = current_pos_state.status.value if current_pos_state is not None else 0
 
-    # if nearest_ghost_dist > move_needed or sumScaredTimes > 0:
-    #     score += priority * nearest_ghost_dist
-    # else:
-    #     score -= priority * nearest_ghost_dist
+    # check is pacman in a dead end path
+    if current_pos_state == MazeState.DEAD_END:
+        escape_move = current_pos_state.index + 1
 
-    if sumScaredTimes > 0:    
-        score +=   sumScaredTimes + (-1 * len(capsules)) + (-1 * sumGhostDistance)
-    else :
-        score +=  sumGhostDistance + len(capsules)
+    # check is pacman in a tunnel
+    elif current_pos_state == MazeState.TUNNEL:
+        # check which opening has a ghost nearby 
+        first_opening_nearby_ghost = min([manhattanDistance(current_pos_state.path_info.start, ghost.getPosition()) for ghost in ghost_state])
+        second_opening_nearby_ghost = min([manhattanDistance(current_pos_state.path_info.start, ghost.getPosition()) for ghost in ghost_state])
+
+        if first_opening_nearby_ghost > second_opening_nearby_ghost:
+            escape_move = current_pos_state + 1
+        else:
+            current_pos_state.path_info.length - current_pos_state.index
+
+    elif current_pos_state == MazeState.CORNER:
+        escape_move = 1
+
+    if nearest_ghost_dist > escape_move:
+        score += priority * (nearest_ghost_dist-escape_move)
+    else:
+        score += (-priority) * (nearest_ghost_dist-escape_move)
 
     return score
 
@@ -164,7 +150,7 @@ class Q2_Agent(Agent):
 
         # Check for termina state
         if game_state.isWin() or game_state.isLose() or currDepth >= self.depth:  
-            return self.evaluationFunction(game_state)
+            return self.evaluationFunction(game_state, self.maze_info)
     
         max_value = float('-inf')
         actions = game_state.getLegalActions(0)
@@ -186,7 +172,7 @@ class Q2_Agent(Agent):
 
         # Check for terminal state
         if game_state.isWin() or game_state.isLose():
-            return self.evaluationFunction(game_state)
+            return self.evaluationFunction(game_state, self.maze_info)
         
         minvalue = float('inf')
         actions = game_state.getLegalActions(agent_index)
@@ -335,7 +321,7 @@ class Q2_Agent(Agent):
 class MazeState(Enum):
     CORNER = 1
     TUNNEL = 2
-    DEAD_END = 3
+    DEAD_END = 4
 
     def __call__(self, index=None, path: 'PathInfo' = None):
         return MazeStateInstance(self, index, path)
@@ -356,9 +342,9 @@ class PathInfo:
 
 class MazeStateInstance:
     def __init__(self, status, index, path_info):
-        self.status = status
-        self.index = index
-        self.path_info = path_info
+        self.status: MazeState = status
+        self.index: int = index
+        self.path_info: 'PathInfo' = path_info
 
     def __eq__(self, other):
         # Compare to another StatusInstance or a Status enum member
