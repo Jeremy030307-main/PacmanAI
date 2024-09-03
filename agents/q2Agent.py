@@ -12,7 +12,7 @@ from collections import namedtuple
 from enum import Enum
 from collections import namedtuple
 
-def scoreEvaluationFunction(currentGameState: GameState, maze_info: list[list['PathInfo']]):
+def scoreEvaluationFunction(currentGameState: GameState):
 
     # initial score 
     score = currentGameState.getScore()
