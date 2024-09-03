@@ -71,77 +71,86 @@ def scoreEvaluationFunction(currentGameState: GameState, maze_info: list[list['M
     else:
         # Otherwise, focus on avoiding them
         score += sum(ghost_dist)
+    
+    if sum(scared_times) > 0:    
+        score +=   sum(scared_times) + (-1 * len(capsules)) + (-1 * sum(ghost_dist))
+    else :
+        score +=  sum(ghost_dist) + len(capsules)
+    return score
 
-    # ----------------------------------- Reward and Penalty Section (Maze State) -----------------------------------
+    # # ----------------------------------- Reward and Penalty Section (Maze State) -----------------------------------
 
-    # get the state of the pacman position on the maze
-    current_pos_state: MazeStateInstance = maze_info[pacman_pos[0]][pacman_pos[1]]
-    escape_move = 0
-    eat_move = 0
-    priority = current_pos_state.status.value if current_pos_state is not None else 0
+    # # get the state of the pacman position on the maze
+    # current_pos_state: MazeStateInstance = maze_info[pacman_pos[0]][pacman_pos[1]]
+    # escape_move = 0
+    # eat_move = 0
+    # priority = current_pos_state.status.value if current_pos_state is not None else 0
 
-    # check is pacman in a dead end path
-    if current_pos_state == MazeState.DEAD_END:
-        escape_move = current_pos_state.index + 2
+    # # check is pacman in a dead end path
+    # if current_pos_state == MazeState.DEAD_END:
+    #     print("Dead End")
+    #     escape_move = current_pos_state.index + 2
 
-        dead_end_pos = current_pos_state.path_info.end
-        middle_pos = current_pos_state.path_info.path[len(current_pos_state.path_info.path)//2]
-        if currentGameState.hasFood(dead_end_pos[0], dead_end_pos[1]) == True:
-            eat_move = (current_pos_state.index + 1) + (current_pos_state.path_info.length - (current_pos_state.index + 1)) * 2
-        elif currentGameState.hasFood(middle_pos[0], middle_pos[1]) == True:
-            eat_move = ((current_pos_state.index + 1) + (current_pos_state.path_info.length - (current_pos_state.index + 1)) * 2)/2
-        else: 
-            eat_move = 0
+    #     dead_end_pos = current_pos_state.path_info.end
+    #     middle_pos = current_pos_state.path_info.path[len(current_pos_state.path_info.path)//2]
+    #     if currentGameState.hasFood(dead_end_pos[0], dead_end_pos[1]) == True:
+    #         eat_move = (current_pos_state.index + 1) + (current_pos_state.path_info.length - (current_pos_state.index + 1)) * 2
+    #     elif currentGameState.hasFood(middle_pos[0], middle_pos[1]) == True:
+    #         eat_move = ((current_pos_state.index + 1) + (current_pos_state.path_info.length - (current_pos_state.index + 1)) * 2)/2
+    #     else: 
+    #         eat_move = 0
 
-    # check is pacman in a tunnel
-    elif current_pos_state == MazeState.TUNNEL:
+    # # check is pacman in a tunnel
+    # elif current_pos_state == MazeState.TUNNEL:
+    #     print("Tunnel")
+    #     # check if the tunnel start and end still have food
+    #     tunnel_start = current_pos_state.path_info.start
+    #     tunnel_end = current_pos_state.path_info.end
 
-        # check if the tunnel start and end still have food
-        tunnel_start = current_pos_state.path_info.start
-        tunnel_end = current_pos_state.path_info.end
+    #     has_start_food = currentGameState.hasFood(tunnel_start[0], tunnel_start[1])
+    #     has_end_food = currentGameState.hasFood(tunnel_end[0], tunnel_end[1])
 
-        has_start_food = currentGameState.hasFood(tunnel_start[0], tunnel_start[1])
-        has_end_food = currentGameState.hasFood(tunnel_end[0], tunnel_end[1])
-
-        if has_start_food and has_end_food:
-            # Incentivize clearing the tunnel by prioritizing the closer food
-            if current_pos_state.index <= current_pos_state.path_info.length / 2:
-                escape_move = current_pos_state.index + 1  # Move towards the tunnel end
-            else:
-                escape_move = current_pos_state.path_info.length - current_pos_state.index  # Move towards the tunnel start
+    #     if has_start_food and has_end_food:
+    #         # Incentivize clearing the tunnel by prioritizing the closer food
+    #         if current_pos_state.index <= current_pos_state.path_info.length / 2:
+    #             escape_move = current_pos_state.index + 1  # Move towards the tunnel end
+    #         else:
+    #             escape_move = current_pos_state.path_info.length - current_pos_state.index  # Move towards the tunnel start
         
-        elif has_start_food:
-            escape_move = current_pos_state.path_info.length - current_pos_state.index  # Move towards the tunnel start
+    #     elif has_start_food:
+    #         escape_move = current_pos_state.path_info.length - current_pos_state.index  # Move towards the tunnel start
         
-        elif has_end_food:
-            escape_move = current_pos_state.index + 1  # Move towards the tunnel end
+    #     elif has_end_food:
+    #         escape_move = current_pos_state.index + 1  # Move towards the tunnel end
         
-        else:
-            # If no food is left in the tunnel, focus on ghost avoidance
-            first_opening_nearby_ghost = min([manhattanDistance(tunnel_start, ghost.getPosition()) for ghost in ghost_state])
-            second_opening_nearby_ghost = min([manhattanDistance(tunnel_end, ghost.getPosition()) for ghost in ghost_state])
-            nearest_ghost_dist = min(first_opening_nearby_ghost, second_opening_nearby_ghost)
+    #     else:
+    #         # If no food is left in the tunnel, focus on ghost avoidance
+    #         first_opening_nearby_ghost = min([manhattanDistance(tunnel_start, ghost.getPosition()) for ghost in ghost_state])
+    #         second_opening_nearby_ghost = min([manhattanDistance(tunnel_end, ghost.getPosition()) for ghost in ghost_state])
+    #         nearest_ghost_dist = min(first_opening_nearby_ghost, second_opening_nearby_ghost)
 
-        # check which opening has a ghost nearby 
-        first_opening_nearby_ghost = min([manhattanDistance(current_pos_state.path_info.start, ghost.getPosition()) for ghost in ghost_state])
-        second_opening_nearby_ghost = min([manhattanDistance(current_pos_state.path_info.start, ghost.getPosition()) for ghost in ghost_state])
-        nearest_ghost_dist = min(first_opening_nearby_ghost, second_opening_nearby_ghost)
+    #     # check which opening has a ghost nearby 
+    #     first_opening_nearby_ghost = min([manhattanDistance(current_pos_state.path_info.start, ghost.getPosition()) for ghost in ghost_state])
+    #     second_opening_nearby_ghost = min([manhattanDistance(current_pos_state.path_info.start, ghost.getPosition()) for ghost in ghost_state])
+    #     nearest_ghost_dist = min(first_opening_nearby_ghost, second_opening_nearby_ghost)
 
-        if first_opening_nearby_ghost > second_opening_nearby_ghost:
-            escape_move = current_pos_state.index + 1 
-            eat_move = current_pos_state.path_info.length - current_pos_state.index 
-        else:
-            escape_move = current_pos_state.path_info.length - current_pos_state.index 
-            eat_move = current_pos_state.index + 1 
+    #     if first_opening_nearby_ghost > second_opening_nearby_ghost:
+    #         escape_move = current_pos_state.index + 1 
+    #         eat_move = current_pos_state.path_info.length - current_pos_state.index 
+    #     else:
+    #         escape_move = current_pos_state.path_info.length - current_pos_state.index 
+    #         eat_move = current_pos_state.index + 1 
 
-    elif current_pos_state == MazeState.CORNER:
-        escape_move = 1
-        eat_move = 1
+    # elif current_pos_state == MazeState.CORNER:
+    #     print("Corner")
+    #     escape_move = 1
+    #     eat_move = 1
 
-    if nearest_ghost_dist > escape_move and total_scared_time > 0:
-        score += priority * (eat_move/escape_move) if eat_move != 0 and escape_move != 0 else 0
-    else:
-        score -= priority * escape_move
+    # if nearest_ghost_dist > escape_move and total_scared_time > 0:
+    #     print("Ghost Nearby")
+    #     score += priority * (eat_move/escape_move) if eat_move != 0 and escape_move != 0 else 0
+    # else:
+    #     score -= priority * escape_move
 
     return score
 
