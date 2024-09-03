@@ -7,6 +7,15 @@ from logs.search_logger import log_function
 from pacman import GameState
 from util import manhattanDistance
 from enum import Enum
+import random
+
+class MazeState(Enum):
+    CORNER = 0.2
+    TUNNEL = 0.5
+    DEAD_END = 0.9
+
+    def __call__(self, index=None, path: 'PathInfo' = None):
+        return MazeStateInstance(self, index, path)
 
 def scoreEvaluationFunction(currentGameState: GameState, maze_info: list[list['MazeStateInstance']]):
 
@@ -24,12 +33,23 @@ def scoreEvaluationFunction(currentGameState: GameState, maze_info: list[list['M
 
     # evaluation of score for the curren state
     number_of_non_food_pos = len(currentGameState.getFood().asList(False))  
+
+    farthest_food = max(food_dist) if len(food_dist) > 0 else 0
     
     reciprocalfoodDistance = 0
     if sum(food_dist) > 0:
         reciprocalfoodDistance = 1.0 / sum(food_dist)
+    
+    reciprocalFathestFood = 0
+    if farthest_food > 0:
+        reciprocalFathestFood = 1/farthest_food
+    
+    if len(remaining_food) < 0.2 * len(remaining_food):
+        food_reward = reciprocalFathestFood
+    else:
+        food_reward = reciprocalfoodDistance
         
-    score += currentGameState.getScore() + reciprocalfoodDistance + number_of_non_food_pos + (1/min(food_dist))
+    score += currentGameState.getScore() + number_of_non_food_pos + food_reward
 
     # ----------------------------------- Reward and Penalty Section (Ghost) -----------------------------------
     ghost_state: list[AgentState] = currentGameState.getGhostStates()
@@ -62,7 +82,7 @@ def scoreEvaluationFunction(currentGameState: GameState, maze_info: list[list['M
 
     # check is pacman in a dead end path
     if current_pos_state == MazeState.DEAD_END:
-        escape_move = current_pos_state.index + 1
+        escape_move = current_pos_state.index + 2
 
         dead_end_pos = current_pos_state.path_info.end
         middle_pos = current_pos_state.path_info.path[len(current_pos_state.path_info.path)//2]
@@ -119,9 +139,9 @@ def scoreEvaluationFunction(currentGameState: GameState, maze_info: list[list['M
         eat_move = 1
 
     if nearest_ghost_dist > escape_move and total_scared_time > 0:
-        score += priority * ((1/ eat_move) + (1/escape_move)) if eat_move != 0 and escape_move != 0 else 0
+        score += priority * (eat_move/escape_move) if eat_move != 0 and escape_move != 0 else 0
     else:
-        score -= priority * escape_move * 5
+        score -= priority * escape_move
 
     return score
 
@@ -351,14 +371,6 @@ class Q2_Agent(Agent):
                                 new_path.reverse()
                                 for index, (x,y) in enumerate(new_path):
                                     self.maze_info[x][y] = MazeState.TUNNEL(index, new_path_info)
-
-class MazeState(Enum):
-    CORNER = 0.2
-    TUNNEL = 0.5
-    DEAD_END = 1
-
-    def __call__(self, index=None, path: 'PathInfo' = None):
-        return MazeStateInstance(self, index, path)
 
 class PathInfo:
 
