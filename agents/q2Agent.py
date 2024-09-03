@@ -29,7 +29,7 @@ def scoreEvaluationFunction(currentGameState: GameState, maze_info: list[list['M
     if sum(food_dist) > 0:
         reciprocalfoodDistance = 1.0 / sum(food_dist)
         
-    score += currentGameState.getScore() + reciprocalfoodDistance + number_of_non_food_pos
+    score += currentGameState.getScore() + reciprocalfoodDistance + number_of_non_food_pos + (1/min(food_dist))
 
     # ----------------------------------- Reward and Penalty Section (Ghost) -----------------------------------
     ghost_state: list[AgentState] = currentGameState.getGhostStates()
@@ -65,8 +65,11 @@ def scoreEvaluationFunction(currentGameState: GameState, maze_info: list[list['M
         escape_move = current_pos_state.index + 1
 
         dead_end_pos = current_pos_state.path_info.end
+        middle_pos = current_pos_state.path_info.path[len(current_pos_state.path_info.path)//2]
         if currentGameState.hasFood(dead_end_pos[0], dead_end_pos[1]) == True:
             eat_move = (current_pos_state.index + 1) + (current_pos_state.path_info.length - (current_pos_state.index + 1)) * 2
+        elif currentGameState.hasFood(middle_pos[0], middle_pos[1]) == True:
+            eat_move = ((current_pos_state.index + 1) + (current_pos_state.path_info.length - (current_pos_state.index + 1)) * 2)/2
         else: 
             eat_move = 0
 
@@ -116,7 +119,7 @@ def scoreEvaluationFunction(currentGameState: GameState, maze_info: list[list['M
         eat_move = 1
 
     if nearest_ghost_dist > escape_move and total_scared_time > 0:
-        score += priority * ((1/ eat_move) + (1/escape_move)) if eat_move != 0 else 0
+        score += priority * ((1/ eat_move) + (1/escape_move)) if eat_move != 0 and escape_move != 0 else 0
     else:
         score -= priority * escape_move * 5
 
@@ -350,9 +353,9 @@ class Q2_Agent(Agent):
                                     self.maze_info[x][y] = MazeState.TUNNEL(index, new_path_info)
 
 class MazeState(Enum):
-    CORNER = 0.5
-    TUNNEL = 0.6
-    DEAD_END = 0.8
+    CORNER = 0.2
+    TUNNEL = 0.5
+    DEAD_END = 1
 
     def __call__(self, index=None, path: 'PathInfo' = None):
         return MazeStateInstance(self, index, path)
