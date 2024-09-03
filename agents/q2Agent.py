@@ -7,8 +7,6 @@ from logs.search_logger import log_function
 from pacman import GameState
 from util import manhattanDistance
 from enum import Enum
-from problems.q1b_problem import q1b_problem
-from solvers.q1b_solver import q1b_solver
 
 def scoreEvaluationFunction(currentGameState: GameState, maze_info: list[list['MazeStateInstance']]):
 
@@ -26,7 +24,8 @@ def scoreEvaluationFunction(currentGameState: GameState, maze_info: list[list['M
 
     # evaluation of score for the curren state
     number_of_non_food_pos = len(currentGameState.getFood().asList(False))  
-
+    
+    reciprocalfoodDistance = 0
     if sum(food_dist) > 0:
         reciprocalfoodDistance = 1.0 / sum(food_dist)
         
@@ -48,10 +47,10 @@ def scoreEvaluationFunction(currentGameState: GameState, maze_info: list[list['M
 
     if total_scared_time > 0:
         # If ghosts are scared, focus on chasing them
-        score += total_scared_time - sum(ghost_dist) - len(capsules)
+        score += total_scared_time - sum(ghost_dist)
     else:
         # Otherwise, focus on avoiding them
-        score -= nearest_ghost_dist
+        score += sum(ghost_dist)
 
     # ----------------------------------- Reward and Penalty Section (Maze State) -----------------------------------
 
@@ -70,13 +69,6 @@ def scoreEvaluationFunction(currentGameState: GameState, maze_info: list[list['M
             eat_move = (current_pos_state.index + 1) + (current_pos_state.path_info.length - (current_pos_state.index + 1)) * 2
         else: 
             eat_move = 0
-
-        # Additional check: Encourage Pacman to avoid lingering in dead-ends if ghosts are nearby
-        nearest_ghost_dist = min([manhattanDistance(dead_end_pos, ghost.getPosition()) for ghost in ghost_state])
-        
-        if nearest_ghost_dist <= current_pos_state.index:
-            # Penalize staying in the dead-end if a ghost is close by
-            escape_move += (current_pos_state.index + 1) * 2
 
     # check is pacman in a tunnel
     elif current_pos_state == MazeState.TUNNEL:
@@ -124,9 +116,9 @@ def scoreEvaluationFunction(currentGameState: GameState, maze_info: list[list['M
         eat_move = 1
 
     if nearest_ghost_dist > escape_move and total_scared_time > 0:
-        score += priority * (nearest_ghost_dist-eat_move) + number_of_non_food_pos
+        score += priority * ((1/ eat_move) + (1/escape_move)) if eat_move != 0 else 0
     else:
-        score -= priority * escape_move
+        score -= priority * escape_move * 5
 
     return score
 
@@ -170,6 +162,7 @@ class Q2_Agent(Agent):
         for action in actions:
             nextState = gameState.generateSuccessor(0,action)
                     
+            print("start")
             # Next level is a min level. Hence calling min for successors of the root.
             score = self.min_value(nextState,0,alpha,beta)
 
@@ -177,10 +170,6 @@ class Q2_Agent(Agent):
             if score > currentScore:
                 returnAction = action
                 currentScore = score
-
-            # Updating alpha value at root.    
-            if score > beta:
-                return returnAction
             
             alpha = max(alpha,score)
 
@@ -361,9 +350,9 @@ class Q2_Agent(Agent):
                                     self.maze_info[x][y] = MazeState.TUNNEL(index, new_path_info)
 
 class MazeState(Enum):
-    CORNER = 1
-    TUNNEL = 1.1
-    DEAD_END = 1.2
+    CORNER = 0.5
+    TUNNEL = 0.6
+    DEAD_END = 0.8
 
     def __call__(self, index=None, path: 'PathInfo' = None):
         return MazeStateInstance(self, index, path)
