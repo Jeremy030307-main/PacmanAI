@@ -27,43 +27,96 @@ def scoreEvaluationFunction(currentGameState: GameState, maze_info: list[list['M
 
     # ----------------------------------- Reward Section (Food) -----------------------------------
     remaining_food = currentGameState.getFood().asList()
+    total_food = len(remaining_food)
 
     # Manhattan distance from pacman to each food
     food_dist = [manhattanDistance(pacman_pos, foodPos) for foodPos in remaining_food]
 
-    # evaluation of score for the curren state
     number_of_non_food_pos = len(currentGameState.getFood().asList(False))  
-
-    farthest_food = max(food_dist) if len(food_dist) > 0 else 0
     
     reciprocalfoodDistance = 0
     if sum(food_dist) > 0:
         reciprocalfoodDistance = 1.0 / sum(food_dist)
-    
-    reciprocalFathestFood = 0
-    if farthest_food > 0:
-        reciprocalFathestFood = 1/farthest_food
-    
-    if len(remaining_food) < 0.2 * len(remaining_food):
-        food_reward = reciprocalFathestFood
-    else:
-        food_reward = reciprocalfoodDistance
-        
-    score += currentGameState.getScore() + number_of_non_food_pos + food_reward
 
     # ----------------------------------- Reward and Penalty Section (Ghost) -----------------------------------
+    
+    # get the distance from pacman to each ghost, and the nearest distance to one of the ghost
     ghost_state: list[AgentState] = currentGameState.getGhostStates()
     ghost_dist = [manhattanDistance(pacman_pos, ghost.getPosition()) for ghost in ghost_state]
     nearest_ghost_dist =  min(ghost_dist) if ghost_dist else float('inf')
 
     capsules = currentGameState.getCapsules()
-    # Distance to nearest capsule (power pellet)
     capsuleDistances = [manhattanDistance(pacman_pos, capsule) for capsule in capsules]
     nearestCapsuleDist = min(capsuleDistances) if capsuleDistances else float('inf')
     
-    # Ghost handling based on scared state and proximity
+    # Get the scared timer of the ghost, and take the sum of it 
     scared_times = [ghost.scaredTimer for ghost in ghost_state]
     total_scared_time = sum(scared_times)
+
+    # ----------------------------------- Reward and Penalty Section (Maze State) -----------------------------------
+
+    # get the state of the pacman position on the maze, (help to determine weather it is a dead end or tunnel or corner)
+    pos_maze_state: MazeStateInstance = maze_info[pacman_pos[0]][pacman_pos[1]]
+    maze_state_score = 0    
+
+    # check is pacman in a dead end path
+    if pos_maze_state == MazeState.DEAD_END:
+
+        # check if the dead end path has food
+        if pos_maze_state.path_info.total_food > 0:
+            eat_move = (pos_maze_state.index + 1) + (pos_maze_state.path_info.length - (pos_maze_state.index + 1)) * 2
+            if nearest_ghost_dist > eat_move or total_scared_time > 0:  # if there is enough move to eat, then process to eat in dead end
+                maze_state_score += (nearest_ghost_dist - eat_move) * 50
+            else:
+                # otherwise, escape from the dead end to avoid beign trap
+                maze_state_score -= (eat_move - nearest_ghost_dist) * 50
+        else:
+            print("Harsh Penalty")
+            # apply a harsh penalty to avoid pacman from entering the dead end, the deeper the end, the higher the penalty
+            maze_state_score -= 200 * (pos_maze_state.index + 1)
+
+    # check is pacman in a tunnel
+    elif pos_maze_state == MazeState.TUNNEL:
+
+        tunnel_penalty = 0 # this penalty is used to reduce the unnecesarry visit of pacman in tunnel
+        # check if the tunnel has food
+        if pos_maze_state.path_info.total_food > 0:
+            tunnel_penalty = 2
+        else:
+            tunnel_penalty = -2
+
+        # calculate the distance to exit from both end 
+        exit_1 = pos_maze_state.index + 1
+        exit_2 = pos_maze_state.path_info.length - pos_maze_state.index
+
+        # calculate the nearest ghost near from both ending point of the tunnel 
+        ghost_near_exit1 = min([manhattanDistance(pos_maze_state.path_info.start, ghost.getPosition()) for ghost in ghost_state])
+        ghost_near_exit2 = min([manhattanDistance(pos_maze_state.path_info.end, ghost.getPosition()) for ghost in ghost_state])
+
+        # Add additional logic to consider the situation where both exits are equally dangerous
+        if ghost_near_exit1 == ghost_near_exit2:
+            # In this case, consider which exit is closer to Pacman
+            if exit_1 <= exit_2:
+                escape_move = exit_1 
+            else:
+                escape_move = exit_2
+
+        # Decide which exit to prioritize based on ghost proximity
+        elif ghost_near_exit1 > ghost_near_exit2:
+            # If the ghost is closer to exit 2, prefer moving towards exit 1
+            escape_move = exit_1
+        else:
+            # If the ghost is closer to exit 1, prefer moving towards exit 2
+            escape_move = exit_2
+
+        maze_state_score += escape_move * tunnel_penalty  # if there is a no food, then we reduce the score, if yes we increase to encourage pacman
+
+    # elif pos_maze_state == MazeState.CORNER:
+    #     escape_move = 1
+    #     eat_move = 1
+
+    # score calculation
+    score += currentGameState.getScore() + number_of_non_food_pos + reciprocalfoodDistance
 
     if total_scared_time > 0:
         # If ghosts are scared, focus on chasing them
@@ -72,86 +125,7 @@ def scoreEvaluationFunction(currentGameState: GameState, maze_info: list[list['M
         # Otherwise, focus on avoiding them
         score += sum(ghost_dist)
     
-    if sum(scared_times) > 0:    
-        score +=   sum(scared_times) + (-1 * len(capsules)) + (-1 * sum(ghost_dist))
-    else :
-        score +=  sum(ghost_dist) + len(capsules)
-    return score
-
-    # # ----------------------------------- Reward and Penalty Section (Maze State) -----------------------------------
-
-    # # get the state of the pacman position on the maze
-    # current_pos_state: MazeStateInstance = maze_info[pacman_pos[0]][pacman_pos[1]]
-    # escape_move = 0
-    # eat_move = 0
-    # priority = current_pos_state.status.value if current_pos_state is not None else 0
-
-    # # check is pacman in a dead end path
-    # if current_pos_state == MazeState.DEAD_END:
-    #     print("Dead End")
-    #     escape_move = current_pos_state.index + 2
-
-    #     dead_end_pos = current_pos_state.path_info.end
-    #     middle_pos = current_pos_state.path_info.path[len(current_pos_state.path_info.path)//2]
-    #     if currentGameState.hasFood(dead_end_pos[0], dead_end_pos[1]) == True:
-    #         eat_move = (current_pos_state.index + 1) + (current_pos_state.path_info.length - (current_pos_state.index + 1)) * 2
-    #     elif currentGameState.hasFood(middle_pos[0], middle_pos[1]) == True:
-    #         eat_move = ((current_pos_state.index + 1) + (current_pos_state.path_info.length - (current_pos_state.index + 1)) * 2)/2
-    #     else: 
-    #         eat_move = 0
-
-    # # check is pacman in a tunnel
-    # elif current_pos_state == MazeState.TUNNEL:
-    #     print("Tunnel")
-    #     # check if the tunnel start and end still have food
-    #     tunnel_start = current_pos_state.path_info.start
-    #     tunnel_end = current_pos_state.path_info.end
-
-    #     has_start_food = currentGameState.hasFood(tunnel_start[0], tunnel_start[1])
-    #     has_end_food = currentGameState.hasFood(tunnel_end[0], tunnel_end[1])
-
-    #     if has_start_food and has_end_food:
-    #         # Incentivize clearing the tunnel by prioritizing the closer food
-    #         if current_pos_state.index <= current_pos_state.path_info.length / 2:
-    #             escape_move = current_pos_state.index + 1  # Move towards the tunnel end
-    #         else:
-    #             escape_move = current_pos_state.path_info.length - current_pos_state.index  # Move towards the tunnel start
-        
-    #     elif has_start_food:
-    #         escape_move = current_pos_state.path_info.length - current_pos_state.index  # Move towards the tunnel start
-        
-    #     elif has_end_food:
-    #         escape_move = current_pos_state.index + 1  # Move towards the tunnel end
-        
-    #     else:
-    #         # If no food is left in the tunnel, focus on ghost avoidance
-    #         first_opening_nearby_ghost = min([manhattanDistance(tunnel_start, ghost.getPosition()) for ghost in ghost_state])
-    #         second_opening_nearby_ghost = min([manhattanDistance(tunnel_end, ghost.getPosition()) for ghost in ghost_state])
-    #         nearest_ghost_dist = min(first_opening_nearby_ghost, second_opening_nearby_ghost)
-
-    #     # check which opening has a ghost nearby 
-    #     first_opening_nearby_ghost = min([manhattanDistance(current_pos_state.path_info.start, ghost.getPosition()) for ghost in ghost_state])
-    #     second_opening_nearby_ghost = min([manhattanDistance(current_pos_state.path_info.start, ghost.getPosition()) for ghost in ghost_state])
-    #     nearest_ghost_dist = min(first_opening_nearby_ghost, second_opening_nearby_ghost)
-
-    #     if first_opening_nearby_ghost > second_opening_nearby_ghost:
-    #         escape_move = current_pos_state.index + 1 
-    #         eat_move = current_pos_state.path_info.length - current_pos_state.index 
-    #     else:
-    #         escape_move = current_pos_state.path_info.length - current_pos_state.index 
-    #         eat_move = current_pos_state.index + 1 
-
-    # elif current_pos_state == MazeState.CORNER:
-    #     print("Corner")
-    #     escape_move = 1
-    #     eat_move = 1
-
-    # if nearest_ghost_dist > escape_move and total_scared_time > 0:
-    #     print("Ghost Nearby")
-    #     score += priority * (eat_move/escape_move) if eat_move != 0 and escape_move != 0 else 0
-    # else:
-    #     score -= priority * escape_move
-
+    score += maze_state_score
     return score
 
 class Q2_Agent(Agent):
@@ -160,7 +134,7 @@ class Q2_Agent(Agent):
         self.index = 0 # Pacman is always agent index 0
         self.evaluationFunction = util.lookup(evalFn, globals())
         self.depth = int(depth)
-        self.maze_info: list[list[PathInfo]] = None
+        self.maze_info: list[list[MazeStateInstance]] = None
 
     @log_function
     def getAction(self, gameState: GameState):
@@ -185,6 +159,7 @@ class Q2_Agent(Agent):
         if self.maze_info is None:
             self.check_maze_info(gameState)
         
+        pacman_pos = gameState.getPacmanPosition()
         actions = gameState.getLegalActions(0)
         currentScore = float('-inf')
         returnAction = None
@@ -204,7 +179,16 @@ class Q2_Agent(Agent):
                 currentScore = score
             
             alpha = max(alpha,score)
-
+        
+        dx, dy = Actions.directionToVector(returnAction)
+        next_x = int(pacman_pos[0]+dx)
+        next_y = int(pacman_pos[1]+dy)
+        
+        if gameState.hasFood(next_x, next_y):
+            maze_state = self.maze_info[next_x][next_y]
+            if maze_state is not None and (maze_state == MazeState.DEAD_END or maze_state == MazeState.TUNNEL):
+                maze_state.path_info.total_food -= 1
+                
         return returnAction
 
     def max_value(self, game_state: GameState, depth: int, alpha: int, beta:int):
@@ -281,6 +265,8 @@ class Q2_Agent(Agent):
 
             # Check weather the current position is a dead end or corner
             if is_dead_end:
+                path_info = PathInfo([(x,y)])
+                path_info.total_food = int(game_state.hasFood(x,y))
                 self.maze_info[x][y] =  MazeState.DEAD_END(0, PathInfo([(x,y)]))
             elif is_corner:
                 self.maze_info[x][y] = MazeState.CORNER()
@@ -360,6 +346,8 @@ class Q2_Agent(Agent):
                         new_path_info = PathInfo(new_path)
                         for index, (x,y) in enumerate(new_path):
                             self.maze_info[x][y] = MazeState.DEAD_END(index, new_path_info)
+                            if gs.hasFood(x,y):
+                                new_path_info.total_food += 1
 
                     else:
                         ori_stack.append((next_x, next_y))
@@ -376,10 +364,14 @@ class Q2_Agent(Agent):
                                 
                                 for index, (x,y) in enumerate(new_path):
                                     self.maze_info[x][y] = MazeState.TUNNEL(exist_index+index, existing_path_info)
+                                    if gs.hasFood(x,y):
+                                        existing_path_info.total_food += 1
                             else:
                                 new_path.reverse()
                                 for index, (x,y) in enumerate(new_path):
                                     self.maze_info[x][y] = MazeState.TUNNEL(index, new_path_info)
+                                    if gs.hasFood(x,y):
+                                        new_path_info.total_food += 1
 
 class PathInfo:
 
@@ -387,13 +379,16 @@ class PathInfo:
         self.path = path
         self.start = path[0]
         self.end = path[-1]
-        self.length = len(path)
+        self.length = len(path) 
+        self.total_food = 0
     
     def update(self, path: list[tuple[int, int]]):
         self.path = path
         self.start = path[0]
         self.end = path[-1]
         self.length = len(path)
+        self.total_food = 0
+
 
 class MazeStateInstance:
     def __init__(self, status, index, path_info):
