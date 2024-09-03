@@ -71,13 +71,12 @@ def scoreEvaluationFunction(currentGameState: GameState, maze_info: list[list['M
                 # otherwise, escape from the dead end to avoid beign trap
                 maze_state_score -= (eat_move - nearest_ghost_dist) * 50
         else:
-            print("Harsh Penalty")
             # apply a harsh penalty to avoid pacman from entering the dead end, the deeper the end, the higher the penalty
             maze_state_score -= 200 * (pos_maze_state.index + 1)
 
     # check is pacman in a tunnel
     elif pos_maze_state == MazeState.TUNNEL:
-
+        
         tunnel_penalty = 0 # this penalty is used to reduce the unnecesarry visit of pacman in tunnel
         # check if the tunnel has food
         if pos_maze_state.path_info.total_food > 0:
@@ -93,30 +92,24 @@ def scoreEvaluationFunction(currentGameState: GameState, maze_info: list[list['M
         ghost_near_exit1 = min([manhattanDistance(pos_maze_state.path_info.start, ghost.getPosition()) for ghost in ghost_state])
         ghost_near_exit2 = min([manhattanDistance(pos_maze_state.path_info.end, ghost.getPosition()) for ghost in ghost_state])
 
-        # Add additional logic to consider the situation where both exits are equally dangerous
-        if ghost_near_exit1 == ghost_near_exit2:
-            # In this case, consider which exit is closer to Pacman
-            if exit_1 <= exit_2:
-                escape_move = exit_1 
-            else:
-                escape_move = exit_2
+        # if ghost_near_exit1 > exit_1 or total_scared_time > 0:
+        #     maze_state_score += (ghost_near_exit1 - exit_1) * 20
+        # else:
+        #     maze_state_score -= (ghost_near_exit1 - exit_1) * 20
+        
+        # if ghost_near_exit2 > exit_2 or total_scared_time > 0:
+        #     maze_state_score += (ghost_near_exit2 - exit_2) * 20
+        # else:
+        #     maze_state_score -= (ghost_near_exit2 - exit_2) * 20
 
-        # Decide which exit to prioritize based on ghost proximity
-        elif ghost_near_exit1 > ghost_near_exit2:
-            # If the ghost is closer to exit 2, prefer moving towards exit 1
-            escape_move = exit_1
-        else:
-            # If the ghost is closer to exit 1, prefer moving towards exit 2
-            escape_move = exit_2
+        maze_state_score *= tunnel_penalty  # if there is a no food, then we reduce the score, if yes we increase to encourage pacman
 
-        maze_state_score += escape_move * tunnel_penalty  # if there is a no food, then we reduce the score, if yes we increase to encourage pacman
-
-    # elif pos_maze_state == MazeState.CORNER:
-    #     escape_move = 1
-    #     eat_move = 1
+    # if the position is not any dangerous spot, add some rewards
+    else:
+        pass
 
     # score calculation
-    score += currentGameState.getScore() + number_of_non_food_pos + reciprocalfoodDistance
+    score += currentGameState.getScore() + number_of_non_food_pos + (reciprocalfoodDistance)
 
     if total_scared_time > 0:
         # If ghosts are scared, focus on chasing them
@@ -158,7 +151,7 @@ class Q2_Agent(Agent):
 
         if self.maze_info is None:
             self.check_maze_info(gameState)
-        
+                
         pacman_pos = gameState.getPacmanPosition()
         actions = gameState.getLegalActions(0)
         currentScore = float('-inf')
@@ -169,7 +162,6 @@ class Q2_Agent(Agent):
         for action in actions:
             nextState = gameState.generateSuccessor(0,action)
                     
-            print("start")
             # Next level is a min level. Hence calling min for successors of the root.
             score = self.min_value(nextState,0,alpha,beta)
 
@@ -340,7 +332,7 @@ class Q2_Agent(Agent):
                     if is_corner or is_corridor:
                         stack.append(((next_x, next_y), path[:]))
                     elif is_dead_end:
-
+                        visited[next_x][next_y] = True
                         new_path = path[:]
                         new_path.append((next_x, next_y))
                         new_path_info = PathInfo(new_path)
