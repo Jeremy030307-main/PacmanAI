@@ -104,6 +104,8 @@ def astar_loop_body(problem: q1b_problem, astarData: AStarData):
     while current_node.visited:
         current_node = astarData.open_list.pop(0)
 
+    current_node.visited = True
+
     # check if the current position is the goal state
     if problem.isGoalState(current_node.state):
         actions = action_reconstruct(astarData, current_node)
