@@ -101,8 +101,12 @@ def astar_loop_body(problem: q1b_problem, astarData: AStarData):
     hq.heapify(astarData.open_list)
     current_node = astarData.open_list.pop(0)
 
-    while current_node.visited:
+    while current_node.visited and len(astarData.open_list) > 0:
         current_node = astarData.open_list.pop(0)
+        if len(astarData.open_list) <= 0:
+            lower_visited_node = astarData.visited.pop(0)
+            astarData.treshold = lower_visited_node.f
+            hq.heappush(astarData.open_list, lower_visited_node)
 
     current_node.visited = True
 
