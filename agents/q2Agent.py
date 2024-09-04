@@ -119,6 +119,11 @@ def score_evaluation_dead_end(currentGameState: GameState, maze_info: list[list[
 
             # apply a harsh penalty to avoid pacman from entering the dead end, the deeper the end, the higher the penalty, 
             # can assume the opening of the dead end is a wall, so that pacman cannot go in
+            if pos_maze_state.path_info.length == 1:
+                print("Harsh Penalty", pos_maze_state.path_info.path, pos_maze_state.index, pos_maze_state.path_info.total_food)
+                maze_state_score -= 490
+                return maze_state_score
+            
             maze_state_score -= pos_maze_state.index * 200 # similar penalty of eaten by ghost
             return maze_state_score
 
@@ -135,6 +140,7 @@ def score_evaluation_dead_end(currentGameState: GameState, maze_info: list[list[
             maze_state_score -= 500
 
     return maze_state_score
+
 def scoreEvaluationFunction(currentGameState: GameState, maze_info: list[list['MazeStateInstance']], visit_freq):
 
     # initial score 
@@ -268,8 +274,9 @@ class Q2_Agent(Agent):
             # Check weather the current position is a dead end or corner
             if is_dead_end:
                 path_info = PathInfo([(x,y)])
-                path_info.total_food = int(game_state.hasFood(x,y))
-                self.maze_info[x][y] =  MazeState.DEAD_END(0, PathInfo([(x,y)]))
+                if game_state.hasFood(x,y):
+                    path_info.total_food += 1
+                self.maze_info[x][y] =  MazeState.DEAD_END(0, path_info)
             elif is_corner:
                 self.maze_info[x][y] = MazeState.CORNER()
             elif is_corridor:
