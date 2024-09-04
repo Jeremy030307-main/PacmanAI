@@ -83,8 +83,8 @@ def astar_initialise(problem: q1b_problem):
         astarData.terminate = True
     else:
         # push it into queue
-        hq.heappush(astarData.open_list, start_node)
-        # hq.heappush(astarData.visited, start_node)
+        # hq.heappush(astarData.open_list, start_node)
+        hq.heappush(astarData.visited, start_node)
 
     return astarData    
 
