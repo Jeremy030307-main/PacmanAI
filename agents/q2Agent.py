@@ -71,6 +71,7 @@ def scoreEvaluationFunction(currentGameState: GameState, maze_info: list[list['M
                 # otherwise, escape from the dead end to avoid beign trap
                 maze_state_score -= (eat_move - nearest_ghost_dist) * 50
         else:
+            print("Harsh Penaty")
             # apply a harsh penalty to avoid pacman from entering the dead end, the deeper the end, the higher the penalty
             maze_state_score -= 200 * (pos_maze_state.index + 1)
 
@@ -123,7 +124,7 @@ def scoreEvaluationFunction(currentGameState: GameState, maze_info: list[list['M
 
 class Q2_Agent(Agent):
 
-    def __init__(self, evalFn = 'scoreEvaluationFunction', depth = '3'):
+    def __init__(self, evalFn = 'scoreEvaluationFunction', depth = '2'):
         self.index = 0 # Pacman is always agent index 0
         self.evaluationFunction = util.lookup(evalFn, globals())
         self.depth = int(depth)
