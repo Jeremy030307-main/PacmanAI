@@ -36,22 +36,22 @@ class Node:
         self.visited: bool = False
 
     def __eq__(self, value: 'Node') -> bool:
-        return self.f == value.f
+        return (self.f, self.g) == (value.f, value.g)
 
     def __ne__(self, value: 'Node') -> bool:
-        return self.f != value.f
+        return (self.f, self.g) != (value.f, value.g)
 
     def __lt__(self, value: 'Node'): 
-        return self.f < value.f
+        return (self.f, self.g) < (value.f, value.g)
     
     def __gt__(self, value: 'Node'): 
-        return self.f > value.f
+        return (self.f, self.g)> (value.f, value.g)
     
     def __ge__(self, value: 'Node'): 
-        return self.f >= value.f
+        return (self.f, self.g) >= (value.f, value.g)
     
     def __le__(self, value: 'Node'): 
-        return self.f <= value.f
+        return (self.f, self.g) <= (value.f, value.g)
 
 class AStarData:
     # YOUR CODE HERE
@@ -84,7 +84,7 @@ def astar_initialise(problem: q1b_problem):
     else:
         # push it into queue
         hq.heappush(astarData.open_list, start_node)
-        hq.heappush(astarData.visited, start_node)
+        # hq.heappush(astarData.visited, start_node)
 
     return astarData    
 
@@ -103,7 +103,7 @@ def astar_loop_body(problem: q1b_problem, astarData: AStarData):
 
     while current_node.visited and len(astarData.open_list) > 0:
         current_node = astarData.open_list.pop(0)
-        if len(astarData.open_list) <= 0:
+        if current_node.visited and len(astarData.open_list) <= 0:
             lower_visited_node = astarData.visited.pop(0)
             astarData.treshold = lower_visited_node.f
             hq.heappush(astarData.open_list, lower_visited_node)
