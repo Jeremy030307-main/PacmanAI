@@ -137,9 +137,6 @@ def astar_loop_body(problem: q1b_problem, astarData: AStarData):
             next_state_node.actionTaken = action
             next_state_node.parent = current_node
 
-            if next_state_node.visited == True:
-                next_state_node.visited == False
-
             if next_state_node.f <= astarData.treshold:
                 hq.heappush(astarData.open_list, next_state_node)
             else:
