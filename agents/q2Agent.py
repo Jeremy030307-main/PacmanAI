@@ -59,8 +59,10 @@ def score_evaluation_ghost(currentGameState: GameState, maze_info: list[list['Ma
     ghost_state: list[AgentState] = currentGameState.getGhostStates()
     total_ghost_dist = 0
     ghost_dist_penalty = 0
+    nearest_ghost_dist = float('inf')
     for ghost in ghost_state:
         distance = manhattanDistance(pacman_pos, ghost.getPosition())
+        nearest_ghost_dist = min(nearest_ghost_dist, distance)
         total_ghost_dist += distance
         ghost_dist_penalty -= 2/ (distance + 1)
 
@@ -73,7 +75,7 @@ def score_evaluation_ghost(currentGameState: GameState, maze_info: list[list['Ma
     else:
         score += ghost_dist_penalty
 
-    return score, total_scared_time
+    return score, total_scared_time, nearest_ghost_dist
 
 def score_evaluation_capsule(currentGameState: GameState, ghost_scared_timer):
     
@@ -102,6 +104,37 @@ def penalty_frequency_visit (currentGameState: GameState, visit_freq):
     visit_count = visit_freq[pacman_pos[0]][pacman_pos[1]]
     return min(10 * (visit_count ** 2), 490)
 
+def score_evaluation_dead_end(currentGameState: GameState, maze_info: list[list['MazeStateInstance']], visit_freq, nearest_ghost, scared_time):
+
+    pacman_pos = currentGameState.getPacmanPosition()
+
+    # get the state of the pacman position on the maze, (help to determine weather it is a dead end or tunnel or corner)
+    pos_maze_state: MazeStateInstance = maze_info[pacman_pos[0]][pacman_pos[1]]
+    maze_state_score = 0    
+
+    # check is pacman in a dead end path
+    if pos_maze_state == MazeState.DEAD_END:
+
+        if pos_maze_state.path_info.total_food == 0:
+
+            # apply a harsh penalty to avoid pacman from entering the dead end, the deeper the end, the higher the penalty, 
+            # can assume the opening of the dead end is a wall, so that pacman cannot go in
+            maze_state_score -= pos_maze_state.index * 200 # similar penalty of eaten by ghost
+            return maze_state_score
+
+        # below the section is the condition for the is food in the dead end path
+        escape_move = pos_maze_state.index + 1
+        eat_move = (pos_maze_state.index + 1) + (pos_maze_state.path_info.length - (pos_maze_state.index + 1)) * 2
+
+        # if there is enough move to comsume the food in-and-out, give a high reward to complete it, like real high
+        if nearest_ghost > eat_move or scared_time > 0: 
+            maze_state_score += 500
+        elif nearest_ghost > escape_move + 3:
+            maze_state_score += (nearest_ghost - escape_move) * 10
+        else:
+            maze_state_score -= 500
+
+    return maze_state_score
 def scoreEvaluationFunction(currentGameState: GameState, maze_info: list[list['MazeStateInstance']], visit_freq):
 
     # initial score 
@@ -111,87 +144,14 @@ def scoreEvaluationFunction(currentGameState: GameState, maze_info: list[list['M
     pacman_pos = currentGameState.getPacmanPosition()
 
     food_score = score_evaluation_food(currentGameState, maze_info, visit_freq)
-    ghost_score, ghost_scared = score_evaluation_ghost(currentGameState, maze_info, visit_freq)
+    ghost_score, ghost_scared, nearest_ghost = score_evaluation_ghost(currentGameState, maze_info, visit_freq)
     capsule_score = score_evaluation_capsule(currentGameState, ghost_scared)
     freq_visit_penalty = penalty_frequency_visit(currentGameState, visit_freq)
+    dead_end_score = score_evaluation_dead_end(currentGameState, maze_info, visit_freq, nearest_ghost, ghost_scared)
 
-    score += food_score + ghost_score + capsule_score - freq_visit_penalty
-
-    # # ----------------------------------- Reward and Penalty Section (Maze State) -----------------------------------
-
-    # # get the state of the pacman position on the maze, (help to determine weather it is a dead end or tunnel or corner)
-    # pos_maze_state: MazeStateInstance = maze_info[pacman_pos[0]][pacman_pos[1]]
-    # maze_state_score = 0    
-
-    # # check is pacman in a dead end path
-    # if pos_maze_state == MazeState.DEAD_END:
-
-    #     # check if the dead end path has food
-    #     if pos_maze_state.path_info.total_food > 0:
-    #         eat_move = (pos_maze_state.index + 1) + (pos_maze_state.path_info.length - (pos_maze_state.index + 1)) * 2
-    #         if nearest_ghost_dist > eat_move or total_scared_time > 0:  # if there is enough move to eat, then process to eat in dead end
-    #             maze_state_score += (nearest_ghost_dist - eat_move) * 50
-    #         else:
-    #             # otherwise, escape from the dead end to avoid beign trap
-    #             maze_state_score -= (eat_move - nearest_ghost_dist) * 50
-    #     else:
-    #         print("Harsh Penaty")
-    #         # apply a harsh penalty to avoid pacman from entering the dead end, the deeper the end, the higher the penalty
-    #         maze_state_score -= 200 * (pos_maze_state.index + 1)
-
-    # # check is pacman in a tunnel
-    # elif pos_maze_state == MazeState.TUNNEL:
-
-    #     # calculate the distance to exit from both end 
-    #     exit_1 = pos_maze_state.index + 1
-    #     exit_2 = pos_maze_state.path_info.length - pos_maze_state.index
-
-    #     # calculate the nearest ghost near from both ending point of the tunnel 
-    #     ghost_near_exit1 = min([manhattanDistance(pos_maze_state.path_info.start, ghost.getPosition()) for ghost in ghost_state])
-    #     ghost_near_exit2 = min([manhattanDistance(pos_maze_state.path_info.end, ghost.getPosition()) for ghost in ghost_state])
-
-    #     #Adjust score based on tunnel characteristics
-    #     if pos_maze_state.path_info.total_food > 0:  # Encourage clearing tunnels with food
-    #         maze_state_score += 50
-    #         if nearest_ghost_dist > min(ghost_near_exit1, ghost_near_exit2):  # Favor clearing if ghosts are far
-    #             maze_state_score += 100 / (exit_1 + exit_2)
-    #         else:  # Penalize staying in the tunnel if ghosts are near
-    #             maze_state_score -= 50 / (exit_1 + exit_2)
-    #     else:  # Penalize unnecessary tunnel visits
-    #         maze_state_score -= 50
-
-    # elif pos_maze_state == MazeState.CORNER:
-    #     pass
-    # # if the position is not any dangerous spot, add some rewards
-    # else:
-    #     maze_state_score += 10
-
-    # if total_scared_time > 0:
-    #     # If ghosts are scared, focus on chasing them
-    #     score += total_scared_time - sum(ghost_dist)
-    # else:
-    #     # Otherwise, focus on avoiding them
-    #     score += sum(ghost_dist)
-    
-    # score += maze_state_score
-    
-    # tile_visits = visit_freq[pacman_pos[0]][pacman_pos[1]]
-
-    # # Penalize for revisiting tiles frequently
-    # if tile_visits > 0:
-    #     # Apply a penalty based on the frequency of visits
-    #     maze_state_score -= 10 * tile_visits  # Adjust the multiplier to control the strength of the penalty
-
-    #     # If Pacman has visited the tile too many times, apply a larger penalty
-    #     if tile_visits > 5:  # Threshold can be adjusted
-    #         maze_state_score -= 50  # Additional penalty for excessive revisits
-    # else:
-    #     # Small reward for visiting a new tile
-    #     maze_state_score += 20  # Encourages exploration of new areas
+    score += food_score + ghost_score + capsule_score - freq_visit_penalty + dead_end_score
 
     return score
-
-# def penalty_frequent_visit(visit_freq):
 
 class Q2_Agent(Agent):
 
