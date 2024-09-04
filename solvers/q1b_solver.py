@@ -106,7 +106,7 @@ def astar_loop_body(problem: q1b_problem, astarData: AStarData):
         if current_node.visited and len(astarData.open_list) <= 0:
             lower_visited_node = astarData.visited.pop(0)
             astarData.treshold = lower_visited_node.f
-            hq.heappush(astarData.open_list, lower_visited_node)
+            hq.heappush(astarData.visited, lower_visited_node)
 
     current_node.visited = True
 
