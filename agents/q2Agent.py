@@ -7,7 +7,7 @@ from logs.search_logger import log_function
 from pacman import GameState
 from util import manhattanDistance
 from enum import Enum
-import random
+import random, time, math
 
 class MazeState(Enum):
     CORNER = 0.2
@@ -129,109 +129,174 @@ class Q2_Agent(Agent):
         self.evaluationFunction = util.lookup(evalFn, globals())
         self.depth = int(depth)
         self.maze_info: list[list[MazeStateInstance]] = None
+        self.time_limit = 29
 
+    # @log_function
+    # def getAction(self, gameState: GameState):
+    #     """
+    #         Returns the minimax action from the current gameState using self.depth
+    #         and self.evaluationFunction.
+
+    #         Here are some method calls that might be useful when implementing minimax.
+    #         gameState.getLegalActions(agentIndex):
+    #         Returns a list of legal actions for an agent
+    #         agentIndex=0 means Pacman, ghosts are >= 1
+
+    #         gameState.generateSuccessor(agentIndex, action):
+    #         Returns the successor game state after an agent takes an action
+
+    #         gameState.getNumAgents():
+    #         Returns the total number of agents in the game
+    #     """
+    #     logger = logging.getLogger('root')
+    #     logger.info('MinimaxAgent')
+
+    #     if self.maze_info is None:
+    #         self.check_maze_info(gameState)
+                
+    #     pacman_pos = gameState.getPacmanPosition()
+    #     actions = gameState.getLegalActions(0)
+    #     currentScore = float('-inf')
+    #     returnAction = None
+    #     alpha = float('-inf')
+    #     beta = float('inf')
+
+    #     for action in actions:
+    #         nextState = gameState.generateSuccessor(0,action)
+                    
+    #         # Next level is a min level. Hence calling min for successors of the root.
+    #         score = self.min_value(nextState,0,alpha,beta)
+
+    #         # Choosing the action which is Maximum of the successors.
+    #         if score > currentScore:
+    #             returnAction = action
+    #             currentScore = score
+            
+    #         alpha = max(alpha,score)
+        
+    #     dx, dy = Actions.directionToVector(returnAction)
+    #     next_x = int(pacman_pos[0]+dx)
+    #     next_y = int(pacman_pos[1]+dy)
+        
+    #     if gameState.hasFood(next_x, next_y):
+    #         maze_state = self.maze_info[next_x][next_y]
+    #         if maze_state is not None and (maze_state == MazeState.DEAD_END or maze_state == MazeState.TUNNEL):
+    #             maze_state.path_info.total_food -= 1
+                
+    #     return returnAction
+
+    # def max_value(self, game_state: GameState, depth: int, alpha: int, beta:int):
+
+    #     currDepth = depth + 1
+
+    #     # Check for termina state
+    #     if game_state.isWin() or game_state.isLose() or currDepth >= self.depth:  
+    #         return self.evaluationFunction(game_state, self.maze_info)
+    
+    #     max_value = float('-inf')
+    #     actions = game_state.getLegalActions(0)
+    #     for action in actions:
+
+    #         # generate the successor game state after taking this action
+    #         successor= game_state.generateSuccessor(0,action)
+
+    #         max_value = max(max_value, self.min_value(successor, currDepth, alpha, beta))
+
+    #         if max_value > beta:
+    #             return max_value
+            
+    #         alpha = max(alpha,max_value)
+
+    #     return max_value
+
+    # def min_value(self, game_state: GameState, depth: int, alpha: int, beta:int, agent_index = 1):
+
+    #     # Check for terminal state
+    #     if game_state.isWin() or game_state.isLose():
+    #         return self.evaluationFunction(game_state, self.maze_info)
+        
+    #     minvalue = float('inf')
+    #     actions = game_state.getLegalActions(agent_index)
+    #     for action in actions:
+    #         successor= game_state.generateSuccessor(agent_index,action)
+
+    #         if agent_index == (game_state.getNumAgents()-1):
+    #             minvalue = min(minvalue, self.max_value(successor,depth,alpha,beta))
+
+    #         else:
+    #             minvalue = min(minvalue,self.min_value(successor,depth,alpha,beta, agent_index+1))
+                
+    #         if minvalue <= alpha:
+    #             return minvalue
+            
+    #         beta = min(beta,minvalue)
+
+    #     return minvalue
+    
     @log_function
     def getAction(self, gameState: GameState):
         """
-            Returns the minimax action from the current gameState using self.depth
-            and self.evaluationFunction.
-
-            Here are some method calls that might be useful when implementing minimax.
-            gameState.getLegalActions(agentIndex):
-            Returns a list of legal actions for an agent
-            agentIndex=0 means Pacman, ghosts are >= 1
-
-            gameState.generateSuccessor(agentIndex, action):
-            Returns the successor game state after an agent takes an action
-
-            gameState.getNumAgents():
-            Returns the total number of agents in the game
+        Returns the minimax action with alpha-beta pruning from the current gameState
+        using self.depth and self.evaluationFunction.
         """
-        logger = logging.getLogger('root')
-        logger.info('MinimaxAgent')
+
+        def alphaBeta(state, depth, agentIndex, alpha, beta):
+            if time.time() - self.start_time > self.time_limit - 1:
+                return self.evaluationFunction(state, self.maze_info)
+
+            if state.isWin() or state.isLose() or depth == 0:
+                return self.evaluationFunction(state, self.maze_info)
+
+            if agentIndex == 0:  # Pacman's turn
+                return maxValue(state, depth, alpha, beta)
+            else:  # Ghosts' turn
+                return minValue(state, depth, agentIndex, alpha, beta)
+
+        def maxValue(state, depth, alpha, beta):
+            best_value = -math.inf
+            actions = state.getLegalActions(0)
+            for action in actions:
+                successor = state.generateSuccessor(0, action)
+                value = alphaBeta(successor, depth, 1, alpha, beta)
+                best_value = max(best_value, value)
+                alpha = max(alpha, best_value)
+                if beta <= alpha:
+                    break  # Beta cutoff
+            return best_value
+
+        def minValue(state, depth, agentIndex, alpha, beta):
+            best_value = math.inf
+            next_agent = agentIndex + 1
+            if agentIndex == state.getNumAgents() - 1:  # Last ghost, then Pacman's turn
+                next_agent = 0
+                depth -= 1
+            actions = state.getLegalActions(agentIndex)
+            for action in actions:
+                successor = state.generateSuccessor(agentIndex, action)
+                value = alphaBeta(successor, depth, next_agent, alpha, beta)
+                best_value = min(best_value, value)
+                beta = min(beta, best_value)
+                if beta <= alpha:
+                    break  # Alpha cutoff
+            return best_value
 
         if self.maze_info is None:
             self.check_maze_info(gameState)
-                
-        pacman_pos = gameState.getPacmanPosition()
-        actions = gameState.getLegalActions(0)
-        currentScore = float('-inf')
-        returnAction = None
-        alpha = float('-inf')
-        beta = float('inf')
-
-        for action in actions:
-            nextState = gameState.generateSuccessor(0,action)
-                    
-            # Next level is a min level. Hence calling min for successors of the root.
-            score = self.min_value(nextState,0,alpha,beta)
-
-            # Choosing the action which is Maximum of the successors.
-            if score > currentScore:
-                returnAction = action
-                currentScore = score
             
-            alpha = max(alpha,score)
-        
-        dx, dy = Actions.directionToVector(returnAction)
-        next_x = int(pacman_pos[0]+dx)
-        next_y = int(pacman_pos[1]+dy)
-        
-        if gameState.hasFood(next_x, next_y):
-            maze_state = self.maze_info[next_x][next_y]
-            if maze_state is not None and (maze_state == MazeState.DEAD_END or maze_state == MazeState.TUNNEL):
-                maze_state.path_info.total_food -= 1
-                
-        return returnAction
+        self.start_time = time.time()
 
-    def max_value(self, game_state: GameState, depth: int, alpha: int, beta:int):
+        best_action = None
+        best_value = -math.inf
+        alpha = -math.inf
+        beta = math.inf
+        for action in gameState.getLegalActions(0):
+            value = alphaBeta(gameState.generateSuccessor(0, action), self.depth - 1, 1, alpha, beta)
+            if value > best_value:
+                best_value = value
+                best_action = action
 
-        currDepth = depth + 1
+        return best_action
 
-        # Check for termina state
-        if game_state.isWin() or game_state.isLose() or currDepth >= self.depth:  
-            return self.evaluationFunction(game_state, self.maze_info)
-    
-        max_value = float('-inf')
-        actions = game_state.getLegalActions(0)
-        for action in actions:
-
-            # generate the successor game state after taking this action
-            successor= game_state.generateSuccessor(0,action)
-
-            max_value = max(max_value, self.min_value(successor, currDepth, alpha, beta))
-
-            if max_value > beta:
-                return max_value
-            
-            alpha = max(alpha,max_value)
-
-        return max_value
-
-    def min_value(self, game_state: GameState, depth: int, alpha: int, beta:int, agent_index = 1):
-
-        # Check for terminal state
-        if game_state.isWin() or game_state.isLose():
-            return self.evaluationFunction(game_state, self.maze_info)
-        
-        minvalue = float('inf')
-        actions = game_state.getLegalActions(agent_index)
-        for action in actions:
-            successor= game_state.generateSuccessor(agent_index,action)
-
-            if agent_index == (game_state.getNumAgents()-1):
-                minvalue = min(minvalue, self.max_value(successor,depth,alpha,beta))
-
-            else:
-                minvalue = min(minvalue,self.min_value(successor,depth,alpha,beta, agent_index+1))
-                
-            if minvalue <= alpha:
-                return minvalue
-            
-            beta = min(beta,minvalue)
-
-        return minvalue
-    
     def check_maze_info(self, game_state: GameState):
         
         walls: Grid = game_state.getWalls()
@@ -381,7 +446,6 @@ class PathInfo:
         self.end = path[-1]
         self.length = len(path)
         self.total_food = 0
-
 
 class MazeStateInstance:
     def __init__(self, status, index, path_info):
