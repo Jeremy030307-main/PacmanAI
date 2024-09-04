@@ -64,7 +64,7 @@ def score_evaluation_ghost(currentGameState: GameState, maze_info: list[list['Ma
         distance = manhattanDistance(pacman_pos, ghost.getPosition())
         nearest_ghost_dist = min(nearest_ghost_dist, distance)
         total_ghost_dist += distance
-        ghost_dist_penalty -= 3/ (distance + 1)
+        ghost_dist_penalty -= 5/ (distance + 1)
 
     # Get the scared timer of the ghost, and take the sum of it 
     scared_times = [ghost.scaredTimer for ghost in ghost_state]
@@ -145,28 +145,39 @@ def score_evaluation_dead_end(currentGameState: GameState, maze_info: list[list[
     return maze_state_score
 
 # def score_evaluation_tunnel(currentGameState: GameState, maze_info: list[list['MazeStateInstance']], visit_freq, nearest_ghost, scared_time):
-#     pacman_pos = currentGameState.getPacmanPosition()
 
-#     # get the state of the pacman position on the maze, (help to determine weather it is a dead end or tunnel or corner)
+#     pacman_pos = currentGameState.getPacmanPosition()
+#     all_ghost = currentGameState.getGhostPositions()
+
 #     pos_maze_state: MazeStateInstance = maze_info[pacman_pos[0]][pacman_pos[1]]
 #     maze_state_score = 0    
 
-#     # check is pacman in a dead end path
+#     # Check if Pacman is in a tunnel
 #     if pos_maze_state == MazeState.TUNNEL:
+#         dist_to_start = pos_maze_state.index + 1
+#         dist_to_end = pos_maze_state.path_info.length - pos_maze_state.index
+#         ghost_nearest_to_start = min([manhattanDistance(pos_maze_state.path_info.start, ghost) for ghost in all_ghost])
+#         ghost_nearest_to_end = min([manhattanDistance(pos_maze_state.path_info.end, ghost) for ghost in all_ghost])
 
-#         # if pacman is at the start of the tunnel
-#         if (pos_maze_state.index == 0):
-            
-#             # check is there ghost at the other end 
-
-
-#         # if pacman is at the end of the tunnel
-#         elif (pos_maze_state.index == pos_maze_state.path_info.length - 1):
-#             pass
-
-#         # if pacman is at the middle of the tunnel
+#         # Determine the closest exit for Pacman
+#         if dist_to_start < dist_to_end:
+#             dist_to_closest_opening = dist_to_start
 #         else:
-#             pass
+#             dist_to_closest_opening = dist_to_end
+
+#         # Apply decision logic based on ghost proximity
+#         if ghost_nearest_to_start < dist_to_start and ghost_nearest_to_end >= dist_to_end:
+#             # Ghost near start and no ghost near end, move to end
+#             maze_state_score += 100 - dist_to_end  # Prioritize moving towards the end
+#         elif ghost_nearest_to_end < dist_to_end and ghost_nearest_to_start >= dist_to_start:
+#             # Ghost near end and no ghost near start, move to start
+#             maze_state_score += 100 - dist_to_start  # Prioritize moving towards the start
+#         elif ghost_nearest_to_start >= dist_to_start and ghost_nearest_to_end >= dist_to_end:
+#             # No ghost near both ends, collect food
+#             maze_state_score += 100 - dist_to_closest_opening  # Encourage collecting food
+#         else:
+#             # Ghost near both ends, move to the closer end to escape
+#             maze_state_score -= 100 - dist_to_closest_opening  # Penalize being trapped
 
 #     return maze_state_score
 
@@ -183,6 +194,7 @@ def scoreEvaluationFunction(currentGameState: GameState, maze_info: list[list['M
     capsule_score = score_evaluation_capsule(currentGameState, ghost_scared)
     freq_visit_penalty = penalty_frequency_visit(currentGameState, visit_freq)
     dead_end_score = score_evaluation_dead_end(currentGameState, maze_info, visit_freq, nearest_ghost, ghost_scared)
+    # tunnel_score = score_evaluation_tunnel(currentGameState, maze_info, visit_freq, nearest_ghost, ghost_scared)
 
     score += food_score + ghost_score + capsule_score - freq_visit_penalty + dead_end_score
 
@@ -379,6 +391,7 @@ class Q2_Agent(Agent):
                 next_y = y + direction[1]
 
                 if (0 <= next_x < width) and (0 <= next_y < height) and (not gs.hasWall(next_x, next_y)) and ((next_x, next_y) not in path):
+
                     is_corner, is_dead_end, is_corridor = self.position_check((next_x,next_y), gs)
                     if is_corner or is_corridor:
                         stack.append(((next_x, next_y), path[:]))
@@ -406,7 +419,7 @@ class Q2_Agent(Agent):
                                 existing_path_info.update(new_path)
                                 
                                 for index, (x,y) in enumerate(new_path):
-                                    self.maze_info[x][y] = MazeState.TUNNEL(exist_index+index, existing_path_info)
+                                    self.maze_info[x][y] = MazeState.TUNNEL(index, existing_path_info)
                                     if gs.hasFood(x,y):
                                         existing_path_info.total_food += 1
                             else:
@@ -445,3 +458,22 @@ class MazeStateInstance:
         elif isinstance(other, MazeState):
             return self.status == other
         return False
+
+# def evaluation_function(pos_maze_state, all_ghost):
+
+#     if pos_maze_state == MazeState.TUNNEL:
+#         dist_to_start = pos_maze_state.index + 1
+#         dist_to_end = pos_maze_state.path_info.length - pos_maze_state.index
+#         ghost_nearest_to_start = min([manhattanDistance(pos_maze_state.path_info.start, ghost) for ghost in all_ghost])
+#         ghost_nearest_to_end = min([manhattanDistance(pos_maze_state.path_info.end, ghost) for ghost in all_ghost])
+
+#         # Calculate a score based on distances to ghosts and other factors
+#         maze_state_score = 0
+#         maze_state_score += 1 / (dist_to_start + 1)
+#         maze_state_score += 1 / (dist_to_end + 1)
+#         maze_state_score -= 1 / (ghost_nearest_to_start + 1)
+#         maze_state_score -= 1 / (ghost_nearest_to_end + 1)
+
+#         return maze_state_score
+
+#     return 0
