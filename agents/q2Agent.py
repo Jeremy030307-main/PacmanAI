@@ -17,13 +17,12 @@ class MazeState(Enum):
     def __call__(self, index=None, path: 'PathInfo' = None):
         return MazeStateInstance(self, index, path)
     
-def score_evaluation_food(currentGameState: GameState, maze_info: list[list['MazeStateInstance']], visit_freq):
+def score_evaluation_food(currentGameState: GameState, scared_time):
     
     score = 0
 
     pacman_pos = currentGameState.getPacmanPosition()
     remaining_food = currentGameState.getFood().asList()    
-    total_food = len(remaining_food)
 
     if not remaining_food:
         return 0
@@ -46,11 +45,14 @@ def score_evaluation_food(currentGameState: GameState, maze_info: list[list['Maz
     distance_penalty = -0.1 * sum(food_dist) if sum(food_dist) > max(currentGameState.getWalls().width, currentGameState.getWalls().height) else 0  # Adjust the threshold
 
     # Combine everything
+    if scared_time > 0:
+        return 0
+    
     score += + food_score + distance_penalty + reciprocal_food_distance
 
     return score
 
-def score_evaluation_ghost(currentGameState: GameState, maze_info: list[list['MazeStateInstance']], visit_freq):
+def score_evaluation_ghost(currentGameState: GameState):
 
     pacman_pos = currentGameState.getPacmanPosition()
     score = 0
@@ -71,7 +73,7 @@ def score_evaluation_ghost(currentGameState: GameState, maze_info: list[list['Ma
     total_scared_time = sum(scared_times)
 
     if total_scared_time > 0 :  # means that the ghost can be eaten
-        score += total_scared_time - (ghost_dist_penalty*5)
+        score += total_scared_time + abs(ghost_dist_penalty*100)
     else:
         score += (ghost_dist_penalty)
 
@@ -104,7 +106,7 @@ def penalty_frequency_visit (currentGameState: GameState, visit_freq):
     visit_count = visit_freq[pacman_pos[0]][pacman_pos[1]]
     return min(10 * (visit_count ** 2), 490)
 
-def score_evaluation_dead_end(currentGameState: GameState, maze_info: list[list['MazeStateInstance']], visit_freq, nearest_ghost, scared_time):
+def score_evaluation_dead_end(currentGameState: GameState, maze_info: list[list['MazeStateInstance']], nearest_ghost, scared_time):
 
     pacman_pos = currentGameState.getPacmanPosition()
 
@@ -189,11 +191,11 @@ def scoreEvaluationFunction(currentGameState: GameState, maze_info: list[list['M
     # Get Pacman position and relevant game state information
     pacman_pos = currentGameState.getPacmanPosition()
 
-    food_score = score_evaluation_food(currentGameState, maze_info, visit_freq)
-    ghost_score, ghost_scared, nearest_ghost = score_evaluation_ghost(currentGameState, maze_info, visit_freq)
+    ghost_score, ghost_scared, nearest_ghost = score_evaluation_ghost(currentGameState)
+    food_score = score_evaluation_food(currentGameState, ghost_scared)
     capsule_score = score_evaluation_capsule(currentGameState, ghost_scared)
     freq_visit_penalty = penalty_frequency_visit(currentGameState, visit_freq)
-    dead_end_score = score_evaluation_dead_end(currentGameState, maze_info, visit_freq, nearest_ghost, ghost_scared)
+    dead_end_score = score_evaluation_dead_end(currentGameState, maze_info, nearest_ghost, ghost_scared)
     # tunnel_score = score_evaluation_tunnel(currentGameState, maze_info, visit_freq, nearest_ghost, ghost_scared)
 
     score += food_score + ghost_score + capsule_score - freq_visit_penalty + dead_end_score
