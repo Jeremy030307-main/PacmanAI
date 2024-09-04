@@ -114,12 +114,13 @@ def score_evaluation_dead_end(currentGameState: GameState, maze_info: list[list[
 
     # check is pacman in a dead end path
     if pos_maze_state == MazeState.DEAD_END:
-
-        if pos_maze_state.path_info.total_food == 0:
+        print("Food", pos_maze_state.path_info.total_food)
+        if pos_maze_state.path_info.total_food <= 0:
 
             # apply a harsh penalty to avoid pacman from entering the dead end, the deeper the end, the higher the penalty, 
             # can assume the opening of the dead end is a wall, so that pacman cannot go in
             maze_state_score -= pos_maze_state.index * 200 # similar penalty of eaten by ghost
+            print("Harsh Penalty")
             return maze_state_score
 
         # below the section is the condition for the is food in the dead end path
@@ -135,6 +136,7 @@ def score_evaluation_dead_end(currentGameState: GameState, maze_info: list[list[
             maze_state_score -= 500
 
     return maze_state_score
+
 def scoreEvaluationFunction(currentGameState: GameState, maze_info: list[list['MazeStateInstance']], visit_freq):
 
     # initial score 
