@@ -64,7 +64,7 @@ def score_evaluation_ghost(currentGameState: GameState, maze_info: list[list['Ma
         distance = manhattanDistance(pacman_pos, ghost.getPosition())
         nearest_ghost_dist = min(nearest_ghost_dist, distance)
         total_ghost_dist += distance
-        ghost_dist_penalty -= 2/ (distance + 1)
+        ghost_dist_penalty -= 3/ (distance + 1)
 
     # Get the scared timer of the ghost, and take the sum of it 
     scared_times = [ghost.scaredTimer for ghost in ghost_state]
@@ -73,7 +73,7 @@ def score_evaluation_ghost(currentGameState: GameState, maze_info: list[list['Ma
     if total_scared_time > 0 :  # means that the ghost can be eaten
         score += total_scared_time - (ghost_dist_penalty*5)
     else:
-        score += ghost_dist_penalty
+        score += (ghost_dist_penalty)
 
     return score, total_scared_time, nearest_ghost_dist
 
@@ -120,12 +120,15 @@ def score_evaluation_dead_end(currentGameState: GameState, maze_info: list[list[
             # apply a harsh penalty to avoid pacman from entering the dead end, the deeper the end, the higher the penalty, 
             # can assume the opening of the dead end is a wall, so that pacman cannot go in
             if pos_maze_state.path_info.length == 1:
-                print("Harsh Penalty", pos_maze_state.path_info.path, pos_maze_state.index, pos_maze_state.path_info.total_food)
-                maze_state_score -= 490
+                maze_state_score -= 500
                 return maze_state_score
             
             maze_state_score -= pos_maze_state.index * 200 # similar penalty of eaten by ghost
             return maze_state_score
+
+        # if there are only food left in dead end, just move in the dead end
+        if pos_maze_state.path_info.total_food == len(currentGameState.getFood().asList()):
+            maze_state_score += 500
 
         # below the section is the condition for the is food in the dead end path
         escape_move = pos_maze_state.index + 1
@@ -140,6 +143,32 @@ def score_evaluation_dead_end(currentGameState: GameState, maze_info: list[list[
             maze_state_score -= 500
 
     return maze_state_score
+
+# def score_evaluation_tunnel(currentGameState: GameState, maze_info: list[list['MazeStateInstance']], visit_freq, nearest_ghost, scared_time):
+#     pacman_pos = currentGameState.getPacmanPosition()
+
+#     # get the state of the pacman position on the maze, (help to determine weather it is a dead end or tunnel or corner)
+#     pos_maze_state: MazeStateInstance = maze_info[pacman_pos[0]][pacman_pos[1]]
+#     maze_state_score = 0    
+
+#     # check is pacman in a dead end path
+#     if pos_maze_state == MazeState.TUNNEL:
+
+#         # if pacman is at the start of the tunnel
+#         if (pos_maze_state.index == 0):
+            
+#             # check is there ghost at the other end 
+
+
+#         # if pacman is at the end of the tunnel
+#         elif (pos_maze_state.index == pos_maze_state.path_info.length - 1):
+#             pass
+
+#         # if pacman is at the middle of the tunnel
+#         else:
+#             pass
+
+#     return maze_state_score
 
 def scoreEvaluationFunction(currentGameState: GameState, maze_info: list[list['MazeStateInstance']], visit_freq):
 
@@ -156,6 +185,11 @@ def scoreEvaluationFunction(currentGameState: GameState, maze_info: list[list['M
     dead_end_score = score_evaluation_dead_end(currentGameState, maze_info, visit_freq, nearest_ghost, ghost_scared)
 
     score += food_score + ghost_score + capsule_score - freq_visit_penalty + dead_end_score
+
+    if currentGameState.isWin():
+        score = 99999
+    elif currentGameState.isLose():
+        score = -99999
 
     return score
 
