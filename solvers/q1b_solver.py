@@ -101,8 +101,8 @@ def astar_loop_body(problem: q1b_problem, astarData: AStarData):
     hq.heapify(astarData.open_list)
     current_node = astarData.open_list.pop(0)
 
-    if current_node.visited:
-        return len(astarData.open_list) > 0 and len(astarData.visited)>0, []
+    while current_node.visited:
+        current_node = astarData.open_list.pop(0)
 
     # check if the current position is the goal state
     if problem.isGoalState(current_node.state):
