@@ -146,42 +146,42 @@ def score_evaluation_dead_end(currentGameState: GameState, maze_info: list[list[
 
     return maze_state_score
 
-# def score_evaluation_tunnel(currentGameState: GameState, maze_info: list[list['MazeStateInstance']], visit_freq, nearest_ghost, scared_time):
+def score_evaluation_tunnel(currentGameState: GameState, maze_info: list[list['MazeStateInstance']], visit_freq, nearest_ghost, scared_time):
 
-#     pacman_pos = currentGameState.getPacmanPosition()
-#     all_ghost = currentGameState.getGhostPositions()
+    pacman_pos = currentGameState.getPacmanPosition()
+    all_ghost = currentGameState.getGhostPositions()
 
-#     pos_maze_state: MazeStateInstance = maze_info[pacman_pos[0]][pacman_pos[1]]
-#     maze_state_score = 0    
+    pos_maze_state: MazeStateInstance = maze_info[pacman_pos[0]][pacman_pos[1]]
+    maze_state_score = 0    
 
-#     # Check if Pacman is in a tunnel
-#     if pos_maze_state == MazeState.TUNNEL:
-#         dist_to_start = pos_maze_state.index + 1
-#         dist_to_end = pos_maze_state.path_info.length - pos_maze_state.index
-#         ghost_nearest_to_start = min([manhattanDistance(pos_maze_state.path_info.start, ghost) for ghost in all_ghost])
-#         ghost_nearest_to_end = min([manhattanDistance(pos_maze_state.path_info.end, ghost) for ghost in all_ghost])
+    # Check if Pacman is in a tunnel
+    if pos_maze_state == MazeState.TUNNEL:
+        dist_to_start = pos_maze_state.index + 1
+        dist_to_end = pos_maze_state.path_info.length - pos_maze_state.index
+        ghost_nearest_to_start = min([manhattanDistance(pos_maze_state.path_info.start, ghost) for ghost in all_ghost])
+        ghost_nearest_to_end = min([manhattanDistance(pos_maze_state.path_info.end, ghost) for ghost in all_ghost])
 
-#         # Determine the closest exit for Pacman
-#         if dist_to_start < dist_to_end:
-#             dist_to_closest_opening = dist_to_start
-#         else:
-#             dist_to_closest_opening = dist_to_end
+        # Determine the closest exit for Pacman
+        if dist_to_start < dist_to_end:
+            dist_to_closest_opening = dist_to_start
+        else:
+            dist_to_closest_opening = dist_to_end
 
-#         # Apply decision logic based on ghost proximity
-#         if ghost_nearest_to_start < dist_to_start and ghost_nearest_to_end >= dist_to_end:
-#             # Ghost near start and no ghost near end, move to end
-#             maze_state_score += 100 - dist_to_end  # Prioritize moving towards the end
-#         elif ghost_nearest_to_end < dist_to_end and ghost_nearest_to_start >= dist_to_start:
-#             # Ghost near end and no ghost near start, move to start
-#             maze_state_score += 100 - dist_to_start  # Prioritize moving towards the start
-#         elif ghost_nearest_to_start >= dist_to_start and ghost_nearest_to_end >= dist_to_end:
-#             # No ghost near both ends, collect food
-#             maze_state_score += 100 - dist_to_closest_opening  # Encourage collecting food
-#         else:
-#             # Ghost near both ends, move to the closer end to escape
-#             maze_state_score -= 100 - dist_to_closest_opening  # Penalize being trapped
+        # Apply decision logic based on ghost proximity
+        if ghost_nearest_to_start < dist_to_start and ghost_nearest_to_end >= dist_to_end:
+            # Ghost near start and no ghost near end, move to end
+            maze_state_score += 100 - dist_to_end  # Prioritize moving towards the end
+        elif ghost_nearest_to_end < dist_to_end and ghost_nearest_to_start >= dist_to_start:
+            # Ghost near end and no ghost near start, move to start
+            maze_state_score += 100 - dist_to_start  # Prioritize moving towards the start
+        elif ghost_nearest_to_start >= dist_to_start and ghost_nearest_to_end >= dist_to_end:
+            # No ghost near both ends, collect food
+            maze_state_score += 100 - dist_to_closest_opening  # Encourage collecting food
+        else:
+            # Ghost near both ends, move to the closer end to escape
+            maze_state_score -= 100 - dist_to_closest_opening  # Penalize being trapped
 
-#     return maze_state_score
+    return maze_state_score
 
 def scoreEvaluationFunction(currentGameState: GameState, maze_info: list[list['MazeStateInstance']], visit_freq):
 
@@ -196,9 +196,9 @@ def scoreEvaluationFunction(currentGameState: GameState, maze_info: list[list['M
     capsule_score = score_evaluation_capsule(currentGameState, ghost_scared)
     freq_visit_penalty = penalty_frequency_visit(currentGameState, visit_freq)
     dead_end_score = score_evaluation_dead_end(currentGameState, maze_info, nearest_ghost, ghost_scared)
-    # tunnel_score = score_evaluation_tunnel(currentGameState, maze_info, visit_freq, nearest_ghost, ghost_scared)
+    tunnel_score = score_evaluation_tunnel(currentGameState, maze_info, visit_freq, nearest_ghost, ghost_scared)
 
-    score += food_score + ghost_score + capsule_score - freq_visit_penalty + dead_end_score
+    score += food_score + ghost_score + capsule_score - freq_visit_penalty + dead_end_score + tunnel_score
 
     if currentGameState.isWin():
         score = 99999
@@ -461,21 +461,3 @@ class MazeStateInstance:
             return self.status == other
         return False
 
-# def evaluation_function(pos_maze_state, all_ghost):
-
-#     if pos_maze_state == MazeState.TUNNEL:
-#         dist_to_start = pos_maze_state.index + 1
-#         dist_to_end = pos_maze_state.path_info.length - pos_maze_state.index
-#         ghost_nearest_to_start = min([manhattanDistance(pos_maze_state.path_info.start, ghost) for ghost in all_ghost])
-#         ghost_nearest_to_end = min([manhattanDistance(pos_maze_state.path_info.end, ghost) for ghost in all_ghost])
-
-#         # Calculate a score based on distances to ghosts and other factors
-#         maze_state_score = 0
-#         maze_state_score += 1 / (dist_to_start + 1)
-#         maze_state_score += 1 / (dist_to_end + 1)
-#         maze_state_score -= 1 / (ghost_nearest_to_start + 1)
-#         maze_state_score -= 1 / (ghost_nearest_to_end + 1)
-
-#         return maze_state_score
-
-#     return 0
