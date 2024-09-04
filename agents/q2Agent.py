@@ -95,6 +95,13 @@ def score_evaluation_capsule(currentGameState: GameState, ghost_scared_timer):
 
     return score
 
+def penalty_frequency_visit (currentGameState: GameState, visit_freq):
+    
+    pacman_pos = currentGameState.getPacmanPosition()
+
+    visit_count = visit_freq[pacman_pos[0]][pacman_pos[1]]
+    return min(10 * (visit_count ** 2), 490)
+
 def scoreEvaluationFunction(currentGameState: GameState, maze_info: list[list['MazeStateInstance']], visit_freq):
 
     # initial score 
@@ -106,23 +113,9 @@ def scoreEvaluationFunction(currentGameState: GameState, maze_info: list[list['M
     food_score = score_evaluation_food(currentGameState, maze_info, visit_freq)
     ghost_score, ghost_scared = score_evaluation_ghost(currentGameState, maze_info, visit_freq)
     capsule_score = score_evaluation_capsule(currentGameState, ghost_scared)
+    freq_visit_penalty = penalty_frequency_visit(currentGameState, visit_freq)
 
-    score += food_score + ghost_score + capsule_score
-
-    # # ----------------------------------- Reward and Penalty Section (Ghost) -----------------------------------
-    
-    # # get the distance from pacman to each ghost, and the nearest distance to one of the ghost
-    # ghost_state: list[AgentState] = currentGameState.getGhostStates()
-    # ghost_dist = [manhattanDistance(pacman_pos, ghost.getPosition()) for ghost in ghost_state]
-    # nearest_ghost_dist =  min(ghost_dist) if ghost_dist else float('inf')
-
-    # capsules = currentGameState.getCapsules()
-    # capsuleDistances = [manhattanDistance(pacman_pos, capsule) for capsule in capsules]
-    # nearestCapsuleDist = min(capsuleDistances) if capsuleDistances else float('inf')
-    
-    # # Get the scared timer of the ghost, and take the sum of it 
-    # scared_times = [ghost.scaredTimer for ghost in ghost_state]
-    # total_scared_time = sum(scared_times)
+    score += food_score + ghost_score + capsule_score - freq_visit_penalty
 
     # # ----------------------------------- Reward and Penalty Section (Maze State) -----------------------------------
 
