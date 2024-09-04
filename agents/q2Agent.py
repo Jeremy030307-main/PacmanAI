@@ -10,6 +10,7 @@ from enum import Enum
 import random, time, math
 
 class MazeState(Enum):
+    CORNER = 0.2
     TUNNEL = 0.5
     DEAD_END = 0.9
 
@@ -26,7 +27,7 @@ def score_evaluation_food(currentGameState: GameState, maze_info: list[list['Maz
 
     if not remaining_food:
         return 0
-    
+
     # Manhattan distance from Pacman to each food
     food_dist = [manhattanDistance(pacman_pos, foodPos) for foodPos in remaining_food] 
 
@@ -114,11 +115,7 @@ def score_evaluation_dead_end(currentGameState: GameState, maze_info: list[list[
     # check is pacman in a dead end path
     if pos_maze_state == MazeState.DEAD_END:
 
-        if pos_maze_state.path_info.total_capsule > 0 and scared_time <= 0 and nearest_ghost <= 10:  # if there is capsule in the path, just go in , apply high reward 
-            maze_state_score += 300
-            return maze_state_score
-
-        if pos_maze_state.path_info.total_food <= 0:
+        if pos_maze_state.path_info.total_food == 0:
 
             # apply a harsh penalty to avoid pacman from entering the dead end, the deeper the end, the higher the penalty, 
             # can assume the opening of the dead end is a wall, so that pacman cannot go in
@@ -138,7 +135,6 @@ def score_evaluation_dead_end(currentGameState: GameState, maze_info: list[list[
             maze_state_score -= 500
 
     return maze_state_score
-
 def scoreEvaluationFunction(currentGameState: GameState, maze_info: list[list['MazeStateInstance']], visit_freq):
 
     # initial score 
@@ -274,6 +270,8 @@ class Q2_Agent(Agent):
                 path_info = PathInfo([(x,y)])
                 path_info.total_food = int(game_state.hasFood(x,y))
                 self.maze_info[x][y] =  MazeState.DEAD_END(0, PathInfo([(x,y)]))
+            elif is_corner:
+                self.maze_info[x][y] = MazeState.CORNER()
             elif is_corridor:
                 self.follow_corridor((x,y), visited, game_state, stack)
 
@@ -283,12 +281,6 @@ class Q2_Agent(Agent):
 
                 if 0 <= next_x < width and 0 <= next_y < height and not visited[next_x][next_y] and not game_state.hasWall(next_x, next_y):
                     stack.append((next_x, next_y))
-
-        capsules = game_state.getCapsules()
-        for capsule in capsules:
-            x,y = capsule
-            if self.maze_info[x][y]:
-                self.maze_info[x][y].path_info.total_capsule += 1
 
     def position_check(self, position, game_state: GameState):
         """ 
@@ -376,7 +368,6 @@ class Q2_Agent(Agent):
                                     self.maze_info[x][y] = MazeState.TUNNEL(exist_index+index, existing_path_info)
                                     if gs.hasFood(x,y):
                                         existing_path_info.total_food += 1
-                                    
                             else:
                                 new_path.reverse()
                                 for index, (x,y) in enumerate(new_path):
@@ -392,7 +383,6 @@ class PathInfo:
         self.end = path[-1]
         self.length = len(path) 
         self.total_food = 0
-        self.total_capsule = 0
     
     def update(self, path: list[tuple[int, int]]):
         self.path = path
@@ -400,7 +390,6 @@ class PathInfo:
         self.end = path[-1]
         self.length = len(path)
         self.total_food = 0
-        self.total_capsule = 0
 
 class MazeStateInstance:
     def __init__(self, status, index, path_info):
