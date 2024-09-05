@@ -36,22 +36,22 @@ class Node:
         self.visited: bool = False
 
     def __eq__(self, value: 'Node') -> bool:
-        return self.f == value.f
+        return (self.f, self.g) == (value.f, value.g)
 
     def __ne__(self, value: 'Node') -> bool:
-        return self.f != value.f
+        return (self.f, self.g) != (value.f, value.g)
 
     def __lt__(self, value: 'Node'): 
-        return self.f < value.f
+        return (self.f, self.g) < (value.f, value.g)
     
     def __gt__(self, value: 'Node'): 
-        return self.f > value.f
+        return (self.f, self.g)> (value.f, value.g)
     
     def __ge__(self, value: 'Node'): 
-        return self.f >= value.f
+        return (self.f, self.g) >= (value.f, value.g)
     
     def __le__(self, value: 'Node'): 
-        return self.f <= value.f
+        return (self.f, self.g) <= (value.f, value.g)
 
 class AStarData:
     # YOUR CODE HERE
