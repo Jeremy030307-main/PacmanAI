@@ -150,7 +150,7 @@ def astar_heuristic(current, goal):
     # current is the position of pacman in (x,y), where goal is the position of goal state
     # in this heuristic, the h_value is the manhattan distance between this two point 
     
-    return min([util.manhattanDistance(current, goal_point) for goal_point in goal]) * 2
+    return 1/(min([util.manhattanDistance(current, goal_point) for goal_point in goal])) 
 
 def action_reconstruct(astarData: AStarData, destination_node: Node):
     action = []
