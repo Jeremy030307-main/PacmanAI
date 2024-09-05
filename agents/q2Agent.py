@@ -168,7 +168,7 @@ def scoreEvaluationFunction(currentGameState: GameState, maze_info: list[list['M
 
     ghost_score, ghost_scared, nearest_ghost = score_evaluation_ghost(currentGameState)
     food_score = score_evaluation_food(currentGameState, ghost_scared)
-    capsule_score = score_evaluation_capsule(currentGameState, ghost_scared)
+    capsule_score = score_evaluation_capsule(currentGameState, ghost_scared, nearest_ghost)
     freq_visit_penalty = penalty_frequency_visit(currentGameState, visit_freq)
     dead_end_score = score_evaluation_dead_end(currentGameState, maze_info, nearest_ghost, ghost_scared)
     # tunnel_score = score_evaluation_tunnel(currentGameState, maze_info, visit_freq, nearest_ghost, ghost_scared)
