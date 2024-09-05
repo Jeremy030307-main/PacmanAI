@@ -79,7 +79,7 @@ def score_evaluation_ghost(currentGameState: GameState):
 
     return score, total_scared_time, nearest_ghost_dist
 
-def score_evaluation_capsule(currentGameState: GameState, ghost_scared_timer):
+def score_evaluation_capsule(currentGameState: GameState, ghost_scared_timer, nearest_ghost):
     
     pacman_pos = currentGameState.getPacmanPosition()
     score = 0
@@ -93,6 +93,8 @@ def score_evaluation_capsule(currentGameState: GameState, ghost_scared_timer):
     if ghost_scared_timer > 0 :  # means that the ghost can be eaten
         score -= capsule_dist_reward 
     else:
+        if nearest_ghost < 10:
+            score += 200
         score += (capsule_dist_reward)
 
     return score
