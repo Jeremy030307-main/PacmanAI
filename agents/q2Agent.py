@@ -10,9 +10,9 @@ from enum import Enum
 import random, time, math
 
 class MazeState(Enum):
-    CORNER = 0.2
-    TUNNEL = 0.5
-    DEAD_END = 0.9
+    CORNER = 1
+    TUNNEL = 2
+    DEAD_END = 3
 
     def __call__(self, index=None, path: 'PathInfo' = None):
         return MazeStateInstance(self, index, path)
@@ -42,13 +42,13 @@ def score_evaluation_food(currentGameState: GameState, scared_time):
     food_score = (5 / closest_food_distance)  # Reward for being closer to food
 
     # Apply a penalty if food is too far away
-    distance_penalty = -0.1 * sum(food_dist) if sum(food_dist) > max(currentGameState.getWalls().width, currentGameState.getWalls().height) else 0  # Adjust the threshold
+    # distance_penalty = -0.1 * sum(food_dist) if sum(food_dist) > max(currentGameState.getWalls().width, currentGameState.getWalls().height) else 0  # Adjust the threshold
 
     # Combine everything
     if scared_time > 0:
         return 0
     
-    score += + food_score + distance_penalty + reciprocal_food_distance
+    score += + food_score + reciprocal_food_distance
 
     return score
 
@@ -85,11 +85,9 @@ def score_evaluation_capsule(currentGameState: GameState, ghost_scared_timer):
     score = 0
 
     # get the distance from pacman to each ghost, apply penalty, the nearest the ghost, the higher the penalty
-    total_capsule_dist = 0
     capsule_dist_reward = 0
     for capsule in currentGameState.getCapsules():
         distance = manhattanDistance(pacman_pos, capsule)
-        total_capsule_dist += distance
         capsule_dist_reward += 1/ (distance + 1)
 
     if ghost_scared_timer > 0 :  # means that the ghost can be eaten
@@ -130,7 +128,19 @@ def score_evaluation_dead_end(currentGameState: GameState, maze_info: list[list[
 
         # if there are only food left in dead end, just move in the dead end
         if pos_maze_state.path_info.total_food == len(currentGameState.getFood().asList()):
+            safe = True
+            for ghost in currentGameState.getGhostPositions():
+                if ghost in pos_maze_state.path_info.path:
+                    safe = False
+                    break
+            if safe:
+                maze_state_score += 500
+                return maze_state_score
+
+        # if there are capsule in path
+        if pos_maze_state.path_info.capsule > 0 and nearest_ghost < 10:
             maze_state_score += 500
+            return maze_state_score
 
         # below the section is the condition for the is food in the dead end path
         escape_move = pos_maze_state.index + 1
@@ -287,6 +297,8 @@ class Q2_Agent(Agent):
                 path_info = PathInfo([(x,y)])
                 if game_state.hasFood(x,y):
                     path_info.total_food += 1
+                if (x,y) in game_state.getCapsules():
+                    path_info.capsule += 1
                 self.maze_info[x][y] =  MazeState.DEAD_END(0, path_info)
             elif is_corner:
                 self.maze_info[x][y] = MazeState.CORNER()
@@ -387,12 +399,16 @@ class Q2_Agent(Agent):
                                     self.maze_info[x][y] = MazeState.TUNNEL(index, existing_path_info)
                                     if gs.hasFood(x,y):
                                         existing_path_info.total_food += 1
+                                    if (x,y) in gs.getCapsules():
+                                        existing_path_info.capsule += 1
                             else:
                                 new_path.reverse()
                                 for index, (x,y) in enumerate(new_path):
                                     self.maze_info[x][y] = MazeState.TUNNEL(index, new_path_info)
                                     if gs.hasFood(x,y):
                                         new_path_info.total_food += 1
+                                    if (x,y) in gs.getCapsules():
+                                        new_path_info.capsule += 1
 
 class PathInfo:
 
@@ -402,6 +418,7 @@ class PathInfo:
         self.end = path[-1]
         self.length = len(path) 
         self.total_food = 0
+        self.capsule = 0
     
     def update(self, path: list[tuple[int, int]]):
         self.path = path
@@ -409,6 +426,7 @@ class PathInfo:
         self.end = path[-1]
         self.length = len(path)
         self.total_food = 0
+        self.capsule = 0
 
 class MazeStateInstance:
     def __init__(self, status, index, path_info):
