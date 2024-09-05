@@ -36,22 +36,22 @@ class Node:
         self.visited: bool = False
 
     def __eq__(self, value: 'Node') -> bool:
-        return (self.f, self.g) == (value.f, value.g)
+        return self.f == value.f
 
     def __ne__(self, value: 'Node') -> bool:
-        return (self.f, self.g) != (value.f, value.g)
+        return self.f != value.f
 
     def __lt__(self, value: 'Node'): 
-        return (self.f, self.g) < (value.f, value.g)
+        return self.f < value.f
     
     def __gt__(self, value: 'Node'): 
-        return (self.f, self.g)> (value.f, value.g)
+        return self.f > value.f
     
     def __ge__(self, value: 'Node'): 
-        return (self.f, self.g) >= (value.f, value.g)
+        return self.f >= value.f
     
     def __le__(self, value: 'Node'): 
-        return (self.f, self.g) <= (value.f, value.g)
+        return self.f <= value.f
 
 class AStarData:
     # YOUR CODE HERE
@@ -83,7 +83,7 @@ def astar_initialise(problem: q1b_problem):
         astarData.terminate = True
     else:
         # push it into queue
-        # hq.heappush(astarData.open_list, start_node)
+        hq.heappush(astarData.open_list, start_node)
         hq.heappush(astarData.visited, start_node)
 
     return astarData    
@@ -103,10 +103,10 @@ def astar_loop_body(problem: q1b_problem, astarData: AStarData):
 
     while current_node.visited and len(astarData.open_list) > 0:
         current_node = astarData.open_list.pop(0)
-        if current_node.visited and len(astarData.open_list) <= 0:
+        if len(astarData.open_list) <= 0:
             lower_visited_node = astarData.visited.pop(0)
             astarData.treshold = lower_visited_node.f
-            hq.heappush(astarData.visited, lower_visited_node)
+            hq.heappush(astarData.open_list, lower_visited_node)
 
     current_node.visited = True
 
@@ -150,7 +150,7 @@ def astar_heuristic(current, goal):
     # current is the position of pacman in (x,y), where goal is the position of goal state
     # in this heuristic, the h_value is the manhattan distance between this two point 
     
-    return min([util.manhattanDistance(current, goal_point) for goal_point in goal])
+    return min([util.manhattanDistance(current, goal_point) for goal_point in goal]) * 2
 
 def action_reconstruct(astarData: AStarData, destination_node: Node):
     action = []
