@@ -108,21 +108,36 @@ class Q1Agent(ValueEstimationAgent):
             #-------------------#
             
             # VALUE ITERATION STARTS HERE
-
+            for _ in range(self.iterations):
+                self.update_values()
             # VALUE ITERATION ENDS HERE
+
             # Save the learnt values to a file for you if want to inspect them
             if self.save_values_after_training:
                 print("here")
                 np.savetxt(f"./models/Q1/{gameState.data.layout.layoutFileName[:-4]}.model", self.values,
                         header=f"{{'discount': {self.discount}, 'iterations': {self.iterations}}}")
+            
+    def update_values(self):
 
+        for state in self.MDP.all_states:
+            temp = self.values[state[0], state[1]]
+            actions = self.MDP.getPossibleActions(state)
+            self.values[state[0], state[1]] = max( self.computeQValueFromValues(state, action) for action in actions)
+    
     def computeQValueFromValues(self, state: tuple, action):
         """
         Compute the Q-value of action in state from the
         value function stored in self.values.
         """
-        "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        q_states = self.MDP.getTransitionStatesAndProbs(state, action)
+        val = 0
+
+        for nextState, prob in q_states:
+            r = self.MDP.getReward(state, action, nextState)
+            val += prob * (r + (self.discount * self.values[nextState[0], nextState[1]]))
+
+        return val
 
     def computePolicyFromValues(self, state: tuple):
         """
@@ -132,5 +147,7 @@ class Q1Agent(ValueEstimationAgent):
         You may break ties any way you see fit.
         """
 
-        "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        actions = self.MDP.getPossibleActions(state)
+        max_q, max_action = max((self.computeQValueFromValues(state, action), action) for action in actions)
+        return max_action
+            
