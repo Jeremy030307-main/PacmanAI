@@ -106,10 +106,15 @@ class Q1Agent(ValueEstimationAgent):
             #-------------------#
             # DO NOT MODIFY END #
             #-------------------#
-            
+            theta=1e-8
+            delta = 0
             # VALUE ITERATION STARTS HERE
             for _ in range(self.iterations):
-                self.update_values()
+                delta = self.update_values()
+
+                if delta < theta:
+                    print("hjahahaah")
+                    break
             # VALUE ITERATION ENDS HERE
 
             # Save the learnt values to a file for you if want to inspect them
@@ -120,10 +125,14 @@ class Q1Agent(ValueEstimationAgent):
             
     def update_values(self):
 
+        delta = 0
         for state in self.MDP.all_states:
             temp = self.values[state[0], state[1]]
             actions = self.MDP.getPossibleActions(state)
             self.values[state[0], state[1]] = max( self.computeQValueFromValues(state, action) for action in actions)
+            delta = max(delta, abs(temp - self.values[state[0], state[1]]))
+
+        return delta
     
     def computeQValueFromValues(self, state: tuple, action):
         """
