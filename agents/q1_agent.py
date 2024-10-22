@@ -106,9 +106,10 @@ class Q1Agent(ValueEstimationAgent):
             #-------------------#
             # DO NOT MODIFY END #
             #-------------------#
+    
+            # VALUE ITERATION STARTS HERE
             theta=1e-8
             delta = 0
-            # VALUE ITERATION STARTS HERE
             for _ in range(self.iterations):
                 delta = self.update_values()
 
