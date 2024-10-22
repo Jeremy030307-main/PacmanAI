@@ -113,9 +113,6 @@ class Q1Agent(ValueEstimationAgent):
             for _ in range(self.iterations):
                 delta = self.update_values()
 
-                if delta < theta:
-                    print("hjahahaah")
-                    break
             # VALUE ITERATION ENDS HERE
 
             # Save the learnt values to a file for you if want to inspect them
