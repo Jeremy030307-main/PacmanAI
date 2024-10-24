@@ -163,83 +163,83 @@ class Q2Agent(ReinforcementAgent):
     # DO NOT MODIFY END #
     #-------------------#
 
-    def getQValue(self, state: tuple, action):
-        """
-          Returns Q(state,action)
-          Should return 0.0 if we have never seen a state
-          or the Q node value otherwise
-        """
-        x,y = state
-        return self.Q_values[x, y, self.getActionIndex(action)]
+    # def getQValue(self, state: tuple, action):
+    #     """
+    #       Returns Q(state,action)
+    #       Should return 0.0 if we have never seen a state
+    #       or the Q node value otherwise
+    #     """
+    #     x,y = state
+    #     return self.Q_values[x, y, self.getActionIndex(action)]
 
-    def computeValueFromQValues(self, state: GameState):
-        """
-          Returns max_action Q(state,action)
-          where the max is over legal actions.
+    # def computeValueFromQValues(self, state: GameState):
+    #     """
+    #       Returns max_action Q(state,action)
+    #       where the max is over legal actions.
 
-          Note that if there are no legal actions, which is the case at the
-          terminal state, you should return a value of 0.0.
+    #       Note that if there are no legal actions, which is the case at the
+    #       terminal state, you should return a value of 0.0.
 
-          HINT: You might want to use self.getLegalActions(state)
-        """
+    #       HINT: You might want to use self.getLegalActions(state)
+    #     """
 
-        legal_action = self.getLegalActions(state)
-        if len(legal_action)>0:
-            max_q = max( self.getQValue(state.getPacmanPosition() , action) for action in legal_action )
-            return max_q
-        else:
-            return 0
+    #     legal_action = self.getLegalActions(state)
+    #     if len(legal_action)>0:
+    #         max_q = max( self.getQValue(state.getPacmanPosition() , action) for action in legal_action )
+    #         return max_q
+    #     else:
+    #         return 0
 
-    def computeActionFromQValues(self, state: GameState):
-        """
-          Compute the best action to take in a state.  Note that if there
-          are no legal actions, which is the case at the terminal state,
-          you should return None.
-          HINT: This function should be a strict max over the Q values, not an epsilon greedy
-        """
-        legal_action = self.getLegalActions(state)
-        if len(legal_action) > 0:
-            max_q, max_action = max( (self.getQValue(state.getPacmanPosition() , action), action) for action in legal_action )
-            return max_action
-        else:
-            return None
+    # def computeActionFromQValues(self, state: GameState):
+    #     """
+    #       Compute the best action to take in a state.  Note that if there
+    #       are no legal actions, which is the case at the terminal state,
+    #       you should return None.
+    #       HINT: This function should be a strict max over the Q values, not an epsilon greedy
+    #     """
+    #     legal_action = self.getLegalActions(state)
+    #     if len(legal_action) > 0:
+    #         max_q, max_action = max( (self.getQValue(state.getPacmanPosition() , action), action) for action in legal_action )
+    #         return max_action
+    #     else:
+    #         return None
 
-    def epsilonGreedyActionSelection(self, state: GameState):
-        """
-        Compute the action to take in the current state.  With
-        probability self.epsilon, we should take a random action and
-        take the best policy action otherwise.  Note that if there are
-        no legal actions, which is the case at the terminal state, you
-        should choose None as the action.
+    # def epsilonGreedyActionSelection(self, state: GameState):
+    #     """
+    #     Compute the action to take in the current state.  With
+    #     probability self.epsilon, we should take a random action and
+    #     take the best policy action otherwise.  Note that if there are
+    #     no legal actions, which is the case at the terminal state, you
+    #     should choose None as the action.
 
-        HINT: You might want to use util.flipCoin(prob)
-        HINT: To pick randomly from a list, use random.choice(list)
-        HINT: You might want to use self.getLegalActions(state)
-        """
-        legal_action = self.getLegalActions(state)
-        action = None
+    #     HINT: You might want to use util.flipCoin(prob)
+    #     HINT: To pick randomly from a list, use random.choice(list)
+    #     HINT: You might want to use self.getLegalActions(state)
+    #     """
+    #     legal_action = self.getLegalActions(state)
+    #     action = None
 
-        if len(legal_action) == 0:
-            return action
-        elif util.flipCoin(self.epsilon):
-            action = random.choice(legal_action)
-        else:
-            action = self.getPolicy(state)
+    #     if len(legal_action) == 0:
+    #         return action
+    #     elif util.flipCoin(self.epsilon):
+    #         action = random.choice(legal_action)
+    #     else:
+    #         action = self.getPolicy(state)
         
-        return action
+    #     return action
         
-    def update(self, state: GameState, action, nextState: GameState, reward):
-        """
-          The parent class calls this to observe a
-          state = action => nextState and reward transition.
-          You should do your Q-Value update here using the Q value update equation
+    # def update(self, state: GameState, action, nextState: GameState, reward):
+    #     """
+    #       The parent class calls this to observe a
+    #       state = action => nextState and reward transition.
+    #       You should do your Q-Value update here using the Q value update equation
 
-          NOTE: You should never call this function,
-          it will be called on your behalf
-        """
-        curr_state = state.getPacmanPosition()        
-        curr_q = self.getQValue(curr_state, action)
-        self.Q_values[curr_state[0], curr_state[1], self.getActionIndex(action)] = (1 - self.alpha) * curr_q + self.alpha * (
-            reward + self.discount * self.getValue(nextState)
-        )
+    #       NOTE: You should never call this function,
+    #       it will be called on your behalf
+    #     """
+    #     curr_state = state.getPacmanPosition()        
+    #     curr_q = self.getQValue(curr_state, action)
+    #     self.Q_values[curr_state[0], curr_state[1], self.getActionIndex(action)] = (1 - self.alpha) * curr_q + self.alpha * (
+    #         reward + self.discount * self.getValue(nextState)
+    #     )
 
