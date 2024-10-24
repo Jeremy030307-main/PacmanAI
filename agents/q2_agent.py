@@ -169,8 +169,8 @@ class Q2Agent(ReinforcementAgent):
           Should return 0.0 if we have never seen a state
           or the Q node value otherwise
         """
-        "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        x,y = state
+        return self.Q_values[x, y, self.getActionIndex(action)]
 
     def computeValueFromQValues(self, state: GameState):
         """
@@ -183,9 +183,12 @@ class Q2Agent(ReinforcementAgent):
           HINT: You might want to use self.getLegalActions(state)
         """
 
-        "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
-
+        legal_action = self.getLegalActions(state)
+        if len(legal_action)>0:
+            max_q = max( self.getQValue(state.getPacmanPosition() , action) for action in legal_action )
+            return max_q
+        else:
+            return 0
 
     def computeActionFromQValues(self, state: GameState):
         """
@@ -194,9 +197,12 @@ class Q2Agent(ReinforcementAgent):
           you should return None.
           HINT: This function should be a strict max over the Q values, not an epsilon greedy
         """
-        "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
-       
+        legal_action = self.getLegalActions(state)
+        if len(legal_action) > 0:
+            max_q, max_action = max( (self.getQValue(state.getPacmanPosition() , action), action) for action in legal_action )
+            return max_action
+        else:
+            return None
 
     def epsilonGreedyActionSelection(self, state: GameState):
         """
@@ -210,10 +216,18 @@ class Q2Agent(ReinforcementAgent):
         HINT: To pick randomly from a list, use random.choice(list)
         HINT: You might want to use self.getLegalActions(state)
         """
-        "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
-        
+        legal_action = self.getLegalActions(state)
+        action = None
 
+        if len(legal_action) == 0:
+            return action
+        elif util.flipCoin(self.epsilon):
+            action = random.choice(legal_action)
+        else:
+            action = self.getPolicy(state)
+        
+        return action
+        
     def update(self, state: GameState, action, nextState: GameState, reward):
         """
           The parent class calls this to observe a
@@ -223,6 +237,9 @@ class Q2Agent(ReinforcementAgent):
           NOTE: You should never call this function,
           it will be called on your behalf
         """
-        "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        curr_state = state.getPacmanPosition()        
+        curr_q = self.getQValue(curr_state, action)
+        self.Q_values[curr_state[0], curr_state[1], self.getActionIndex(action)] = (1 - self.alpha) * curr_q + self.alpha * (
+            reward + self.discount * self.getValue(nextState)
+        )
 
