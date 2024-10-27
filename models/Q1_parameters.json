@@ -3,7 +3,7 @@
         "gamma": 0.964
     },
     "medium": {
-        "gamma": 0.99
+        "gamma": 0.95
     },
     "big": {
         "gamma": 0.9999
