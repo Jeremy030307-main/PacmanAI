@@ -18,6 +18,7 @@ import numpy as np
 from numpy import ndarray as nd
 from pacman import Directions
 import math
+import matplotlib.pyplot as plt
 from featureExtractors import FEATURE_NAMES
 
 PRINT = True
@@ -59,7 +60,7 @@ class PerceptronPacman:
         # a list of the indices for the features that should be used. We always include 0 for the bias term.
         self.features_to_use = [0] + [feature_name_to_idx[feature_name] for feature_name in feature_names_to_use]
 
-        hidden_sizes = []
+        hidden_sizes = [8]
         input_size = len(feature_names_to_use)
         output_size = 1
 
@@ -81,8 +82,8 @@ class PerceptronPacman:
             self.weights.append(np.random.randn(hidden_sizes[-1], output_size) * 0.01)
             self.biases.append(np.zeros((1, output_size)))
         else:
-            self.weights.append(np.random.randn(input_size) * 0.01)
-            self.biases.append(np.zeros((1, 1)))
+            self.weights.append(np.random.randn(input_size, output_size) * 0.01)
+            self.biases.append(np.zeros((1, output_size)))
 
     def activationHidden(self, x):
         """
@@ -90,7 +91,7 @@ class PerceptronPacman:
         """
 
         "*** YOUR CODE HERE ***"
-        np.maximum(0,x)
+        return np.maximum(0,x)
 
     def activationOutput(self, x):
         """
@@ -103,7 +104,7 @@ class PerceptronPacman:
         self.activation = [X]
     
         for i in range(len(self.weights)):
-            # linear transformation 
+            # linear transformation
             z = np.dot(self.activation[-1], self.weights[i]) + self.biases[i]
 
             # apply activation function depending on different layer
@@ -112,34 +113,31 @@ class PerceptronPacman:
             else:
                 a = self.activationOutput(z)
             
-            self.activation.append(a[0])
+            self.activation.append(a)
 
         return self.activation[-1]
 
     def backward(self, X:nd, y:nd):
 
-        prediction = self.activation[-1]
+        prediction = self.activation[-1].T
         m = y.shape[0]
 
         # compute the output error
-        output_error = prediction - y
-
+        output_error = prediction - np.array(y)[np.newaxis, :]
         # compute gradients for the output layer
         sigmoid_derivative = prediction * (1 - prediction)
+        
         output_d = output_error * sigmoid_derivative
 
-        dw = [np.dot(self.activation[-2].T, output_d) / m]  # Weights for output layer
-        db = [np.sum(output_d) / m] 
+        dw = [ np.array(np.dot(self.activation[-2].T, output_d.T) / m)]  # Weights for output layer
+        db = [ np.sum(output_d) / m ] 
 
-        # backword pass for hidden layer (if any)
+        # backward pass for hidden layer (if any)
         for i in range(len(self.weights)-1, 0, -1):
-            prediction = self.activation[i]
-
-            error = np.dot(output_d, self.weights[i].T)
+            error = np.dot(self.weights[i], np.array(output_d))
             hidden_d = error * np.where(prediction > 0, 1, 0)
-
-            dw.append( np.dot(self.a[i-1].T, hidden_d) / m )
-            db.append(np.sum(hidden_d, axis=0, keepdims=True) / m )
+            dw.append( np.dot(self.activation[i-1].T, hidden_d.T) / m )
+            db.append(np.sum(hidden_d) / m )
 
             output_d = hidden_d
         
@@ -149,6 +147,7 @@ class PerceptronPacman:
         return dw, db
 
     def update_weights(self, dw, db):
+
         for i in range(len(self.weights)):
             self.weights[i] -= self.learning_rate * dw[i]
             self.biases[i] -= self.learning_rate * db[i]
@@ -170,10 +169,47 @@ class PerceptronPacman:
         X_train: np.ndarray = trainingData[:, self.features_to_use]
         X_validate = validationData[:, self.features_to_use]
 
+        y = []
+        mse_history = []
+        validataion_history = []
+        plt.ion()
+        fig, (ax1, ax2) = plt.subplots(1,2,figsize=(10,5))
+        line1, = ax1.plot(y, mse_history)
+        line2, = ax2.plot(y, validataion_history)
+
+        # self.load_weights("./models/q3_weights.model")
         for epoch in range(self.max_iterations):
             prediction = self.forward(X_train[:, 1:])
             dw, db = self.backward(X_train[:, 1:], trainingLabels)
-            self.update_weights(dw,db)       
+            self.update_weights(dw,db) 
+            
+            mse = np.mean((trainingLabels - prediction.T[0]) ** 2)  
+
+            # test on validation data
+            validate_predict = self.forward(X_validate[:, 1:])
+            validate_mse = np.mean((validationLabels - validate_predict.T[0]) ** 2)  
+
+            y.append(epoch)
+            mse_history.append(mse)
+            validataion_history.append(validate_mse)
+
+            line1.set_xdata(y)
+            line1.set_ydata(mse_history)
+            ax1.relim()
+            ax1.grid(True)
+            ax1.autoscale_view()
+
+            line2.set_xdata(y)
+            line2.set_ydata(validataion_history)
+            ax2.relim()
+            ax2.grid(True)
+            ax2.autoscale_view()
+
+            fig.canvas.draw()
+            fig.canvas.flush_events()
+    
+        plt.ioff()
+        plt.show()
 
     def predict(self, feature_vector):
         """
@@ -188,7 +224,6 @@ class PerceptronPacman:
             vector_to_classify = feature_vector
 
         predictions = self.forward(vector_to_classify[1:])
-        # return [1 if predictions >= 0.5 else 0 ]
         return predictions
 
     def evaluate(self, data, labels):
@@ -211,12 +246,10 @@ class PerceptronPacman:
         X_eval = data[:, self.features_to_use]
 
         predictions = self.forward(X_eval[:, 1:])
-        loss = np.mean((predictions - labels) ** 2) # mean square error
+        loss = np.mean((predictions.T[0] - labels) ** 2) # mean square error
         print(f"Loss: {loss: .4f}")
 
-        result = [1 if p >= 0.5 else 0 for p in predictions]
-
-        return f"Expectation: {labels} \nResult: {result}"
+        return loss
 
     def save_weights(self, weights_path):
         """
@@ -235,30 +268,46 @@ class PerceptronPacman:
         Loads your weights from a .model file. 
         Whatever you do here should work with the formatting of your save_weights function.
         """
+        weights = []
+        biases = []
+        layer_weights = []
+        layer_biases = []
+        is_weight_section = False
+        is_bias_section = False
+
         with open(weights_path, 'r') as f:
-            lines = f.readlines()
-            i = -1
-            result = [[],[]]
-            current_list = []  # Keeps track of whether we're appending to weights or biases
-
-            for line in lines:
+            for line in f:
                 line = line.strip()
+                
+                # Check if line is the start of a weights or biases section
+                if 'Weights Layer' in line:
+                    # If we're switching to a new layer, save the current layer weights
+                    if layer_biases:
+                        biases.append(np.array(layer_biases))
+                        layer_biases = []  # Reset for next layer
+                    is_weight_section = True
+                    is_bias_section = False
+                    continue
 
-                try:
-                    value = float(line)
-                    current_list.append(value) 
-                except:
-                    if i >= 0:
-                        result[i%2].append(current_list)
-                        current_list = []
+                elif 'Biases Layer' in line:
+                    # If we're switching to biases, save the current layer weights if needed
+                    if layer_weights:
+                        weights.append(np.array(layer_weights))
+                        layer_weights = []  # Reset for next layer
+                    is_weight_section = False
+                    is_bias_section = True
+                    continue
+                
+                # Add values to the appropriate section
+                if is_weight_section:
+                    layer_weights.append(list(map(float, line.split())))
+                elif is_bias_section:
+                    layer_biases.append(list(map(float, line.split())))
 
-                    if 'Weights Layer' in line:
-                        i += 1
-                        continue
-                    elif 'Biases Layer' in line:
-                        i += 1
-                        continue
-            
-            result[i%2].append(current_list)
+            # Append the last layer of weights and biases after the loop
+            if layer_weights:
+                weights.append(np.array(layer_weights))
+            if layer_biases:
+                biases.append(np.array(layer_biases))
 
-        self.weights, self.biases =  result[0], result[1]   
+        self.weights, self.biases =  weights, biases  
