@@ -18,7 +18,7 @@ import numpy as np
 from numpy import ndarray as nd
 from pacman import Directions
 import math
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 from featureExtractors import FEATURE_NAMES
 
 PRINT = True
@@ -169,13 +169,13 @@ class PerceptronPacman:
         X_train: np.ndarray = trainingData[:, self.features_to_use]
         X_validate = validationData[:, self.features_to_use]
 
-        y = []
-        mse_history = []
-        validataion_history = []
-        plt.ion()
-        fig, (ax1, ax2) = plt.subplots(1,2,figsize=(10,5))
-        line1, = ax1.plot(y, mse_history)
-        line2, = ax2.plot(y, validataion_history)
+        # y = []
+        # mse_history = []
+        # validataion_history = []
+        # plt.ion()
+        # fig, (ax1, ax2) = plt.subplots(1,2,figsize=(10,5))
+        # line1, = ax1.plot(y, mse_history)
+        # line2, = ax2.plot(y, validataion_history)
 
         # self.load_weights("./models/q3_weights.model")
         for epoch in range(self.max_iterations):
@@ -189,27 +189,27 @@ class PerceptronPacman:
             validate_predict = self.forward(X_validate[:, 1:])
             validate_mse = np.mean((validationLabels - validate_predict.T[0]) ** 2)  
 
-            y.append(epoch)
-            mse_history.append(mse)
-            validataion_history.append(validate_mse)
+        #     y.append(epoch)
+        #     mse_history.append(mse)
+        #     validataion_history.append(validate_mse)
 
-            line1.set_xdata(y)
-            line1.set_ydata(mse_history)
-            ax1.relim()
-            ax1.grid(True)
-            ax1.autoscale_view()
+        #     line1.set_xdata(y)
+        #     line1.set_ydata(mse_history)
+        #     ax1.relim()
+        #     ax1.grid(True)
+        #     ax1.autoscale_view()
 
-            line2.set_xdata(y)
-            line2.set_ydata(validataion_history)
-            ax2.relim()
-            ax2.grid(True)
-            ax2.autoscale_view()
+        #     line2.set_xdata(y)
+        #     line2.set_ydata(validataion_history)
+        #     ax2.relim()
+        #     ax2.grid(True)
+        #     ax2.autoscale_view()
 
-            fig.canvas.draw()
-            fig.canvas.flush_events()
+        #     fig.canvas.draw()
+        #     fig.canvas.flush_events()
     
-        plt.ioff()
-        plt.show()
+        # plt.ioff()
+        # plt.show()
 
     def predict(self, feature_vector):
         """
