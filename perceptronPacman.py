@@ -18,7 +18,7 @@ import numpy as np
 from numpy import ndarray as nd
 from pacman import Directions
 import math
-# import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt
 from featureExtractors import FEATURE_NAMES
 
 PRINT = True
@@ -60,7 +60,7 @@ class PerceptronPacman:
         # a list of the indices for the features that should be used. We always include 0 for the bias term.
         self.features_to_use = [0] + [feature_name_to_idx[feature_name] for feature_name in feature_names_to_use]
 
-        hidden_sizes = [8]
+        hidden_sizes = [19]
         input_size = len(feature_names_to_use)
         output_size = 1
 
@@ -68,21 +68,26 @@ class PerceptronPacman:
         self.weights = []
         self.biases = []
 
-        # Input to first hidden layer
         if hidden_sizes:
-            self.weights.append(np.random.randn(input_size, hidden_sizes[0]) * 0.01)
+            # He initialization for the first hidden layer
+            fan_in = input_size
+            self.weights.append(np.random.randn(input_size, hidden_sizes[0]) * np.sqrt(2.0 / fan_in))
             self.biases.append(np.zeros((1, hidden_sizes[0])))
 
-            # Hidden layers
+            # He initialization for subsequent hidden layers
             for i in range(1, len(hidden_sizes)):
-                self.weights.append(np.random.randn(hidden_sizes[i - 1], hidden_sizes[i]) * 0.01)
+                fan_in = hidden_sizes[i - 1]  # Update fan_in for each hidden layer
+                self.weights.append(np.random.randn(hidden_sizes[i - 1], hidden_sizes[i]) * np.sqrt(2.0 / fan_in))
                 self.biases.append(np.zeros((1, hidden_sizes[i])))
 
-            # Last hidden layer to output layer
-            self.weights.append(np.random.randn(hidden_sizes[-1], output_size) * 0.01)
+            # He initialization for the last hidden layer to output layer
+            fan_in = hidden_sizes[-1]
+            self.weights.append(np.random.randn(hidden_sizes[-1], output_size) * np.sqrt(2.0 / fan_in))
             self.biases.append(np.zeros((1, output_size)))
         else:
-            self.weights.append(np.random.randn(input_size, output_size) * 0.01)
+            # Single-layer network (input to output directly)
+            fan_in = input_size
+            self.weights.append(np.random.randn(input_size, output_size) * np.sqrt(2.0 / fan_in))
             self.biases.append(np.zeros((1, output_size)))
 
     def activationHidden(self, x):
@@ -129,8 +134,8 @@ class PerceptronPacman:
         
         output_d = output_error * sigmoid_derivative
 
-        dw = [ np.array(np.dot(self.activation[-2].T, output_d.T) / m)]  # Weights for output layer
-        db = [ np.sum(output_d) / m ] 
+        dw = [ (2/m) * np.array(np.dot(self.activation[-2].T, output_d.T))]  # Weights for output layer
+        db = [ (2/m) * np.sum(output_d) ] 
 
         # backward pass for hidden layer (if any)
         for i in range(len(self.weights)-1, 0, -1):
@@ -169,13 +174,13 @@ class PerceptronPacman:
         X_train: np.ndarray = trainingData[:, self.features_to_use]
         X_validate = validationData[:, self.features_to_use]
 
-        # y = []
-        # mse_history = []
-        # validataion_history = []
-        # plt.ion()
-        # fig, (ax1, ax2) = plt.subplots(1,2,figsize=(10,5))
-        # line1, = ax1.plot(y, mse_history)
-        # line2, = ax2.plot(y, validataion_history)
+        y = []
+        mse_history = []
+        validataion_history = []
+        plt.ion()
+        fig, (ax1, ax2) = plt.subplots(1,2,figsize=(10,5))
+        line1, = ax1.plot(y, mse_history)
+        line2, = ax2.plot(y, validataion_history)
 
         # self.load_weights("./models/q3_weights.model")
         for epoch in range(self.max_iterations):
@@ -183,33 +188,34 @@ class PerceptronPacman:
             dw, db = self.backward(X_train[:, 1:], trainingLabels)
             self.update_weights(dw,db) 
             
+            print(dw)
             mse = np.mean((trainingLabels - prediction.T[0]) ** 2)  
 
             # test on validation data
             validate_predict = self.forward(X_validate[:, 1:])
             validate_mse = np.mean((validationLabels - validate_predict.T[0]) ** 2)  
 
-        #     y.append(epoch)
-        #     mse_history.append(mse)
-        #     validataion_history.append(validate_mse)
+            y.append(epoch)
+            mse_history.append(mse)
+            validataion_history.append(validate_mse)
 
-        #     line1.set_xdata(y)
-        #     line1.set_ydata(mse_history)
-        #     ax1.relim()
-        #     ax1.grid(True)
-        #     ax1.autoscale_view()
+            line1.set_xdata(y)
+            line1.set_ydata(mse_history)
+            ax1.relim()
+            ax1.grid(True)
+            ax1.autoscale_view()
 
-        #     line2.set_xdata(y)
-        #     line2.set_ydata(validataion_history)
-        #     ax2.relim()
-        #     ax2.grid(True)
-        #     ax2.autoscale_view()
+            line2.set_xdata(y)
+            line2.set_ydata(validataion_history)
+            ax2.relim()
+            ax2.grid(True)
+            ax2.autoscale_view()
 
-        #     fig.canvas.draw()
-        #     fig.canvas.flush_events()
+            fig.canvas.draw()
+            fig.canvas.flush_events()
     
-        # plt.ioff()
-        # plt.show()
+        plt.ioff()
+        plt.show()
 
     def predict(self, feature_vector):
         """
