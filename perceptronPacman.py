@@ -60,7 +60,7 @@ class PerceptronPacman:
         # a list of the indices for the features that should be used. We always include 0 for the bias term.
         self.features_to_use = [0] + [feature_name_to_idx[feature_name] for feature_name in feature_names_to_use]
 
-        hidden_sizes = [19]
+        hidden_sizes = [64,32]
         input_size = len(feature_names_to_use)
         output_size = 1
 
@@ -90,23 +90,30 @@ class PerceptronPacman:
             self.weights.append(np.random.randn(input_size, output_size) * np.sqrt(2.0 / fan_in))
             self.biases.append(np.zeros((1, output_size)))
 
+        self.reg_lambda = 0.01
+        self.dropout_rate = 0.2
+
     def activationHidden(self, x):
         """
         Implement your chosen activation function for any hidden layers here.
         """
-
-        "*** YOUR CODE HERE ***"
         return np.maximum(0,x)
 
     def activationOutput(self, x):
         """
         Implement your chosen activation function for the output here.
         """
-
         return 1 / (1 + np.exp(-x))
+
+    def gradientHidden(self, x):
+        return np.where(x > 0, 1, 0)
+
+    def gradientOutput(self, x):
+        return x * (1 - x)
 
     def forward(self, X):
         self.activation = [X]
+        self.dropout_mask = []
     
         for i in range(len(self.weights)):
             # linear transformation
@@ -130,7 +137,7 @@ class PerceptronPacman:
         # compute the output error
         output_error = prediction - np.array(y)[np.newaxis, :]
         # compute gradients for the output layer
-        sigmoid_derivative = prediction * (1 - prediction)
+        sigmoid_derivative = self.gradientOutput(prediction)
         
         output_d = output_error * sigmoid_derivative
 
@@ -140,9 +147,9 @@ class PerceptronPacman:
         # backward pass for hidden layer (if any)
         for i in range(len(self.weights)-1, 0, -1):
             error = np.dot(self.weights[i], np.array(output_d))
-            hidden_d = error * np.where(prediction > 0, 1, 0)
-            dw.append( np.dot(self.activation[i-1].T, hidden_d.T) / m )
-            db.append(np.sum(hidden_d) / m )
+            hidden_d = error * self.gradientHidden(self.activation[i].T)
+            dw.append( (2/m) * np.dot(self.activation[i-1].T, hidden_d.T))
+            db.append((2/m) * np.sum(hidden_d))
 
             output_d = hidden_d
         
@@ -188,7 +195,6 @@ class PerceptronPacman:
             dw, db = self.backward(X_train[:, 1:], trainingLabels)
             self.update_weights(dw,db) 
             
-            print(dw)
             mse = np.mean((trainingLabels - prediction.T[0]) ** 2)  
 
             # test on validation data
@@ -253,8 +259,6 @@ class PerceptronPacman:
 
         predictions = self.forward(X_eval[:, 1:])
         loss = np.mean((predictions.T[0] - labels) ** 2) # mean square error
-        print(f"Loss: {loss: .4f}")
-
         return loss
 
     def save_weights(self, weights_path):
