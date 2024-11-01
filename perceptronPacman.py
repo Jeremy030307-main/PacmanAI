@@ -37,7 +37,7 @@ class PerceptronPacman:
             'closestFoodNow',
             'closestGhost',
             'closestGhostNow',
-            'closestScaredGhost',
+            # 'closestScaredGhost',
             'closestScaredGhostNow',
             'eatenByGhost',
             'eatsCapsule',
@@ -60,7 +60,7 @@ class PerceptronPacman:
         # a list of the indices for the features that should be used. We always include 0 for the bias term.
         self.features_to_use = [0] + [feature_name_to_idx[feature_name] for feature_name in feature_names_to_use]
 
-        hidden_sizes = [18]
+        hidden_sizes = [19]
         input_size = len(feature_names_to_use)
         output_size = 1
 
@@ -321,3 +321,6 @@ class PerceptronPacman:
                 biases.append(np.array(layer_biases))
 
         self.weights, self.biases =  weights, biases  
+        modified_list = [x - 1 for x in self.features_to_use[1:]]
+        self.weights[0] = self.weights[0][modified_list, :]
+
