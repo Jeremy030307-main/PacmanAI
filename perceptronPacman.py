@@ -37,7 +37,7 @@ class PerceptronPacman:
             'closestFoodNow',
             'closestGhost',
             'closestGhostNow',
-            # 'closestScaredGhost',
+            'closestScaredGhost',
             'closestScaredGhostNow',
             'eatenByGhost',
             'eatsCapsule',
@@ -187,7 +187,7 @@ class PerceptronPacman:
         # line1, = ax1.plot(y, mse_history)
         # line2, = ax2.plot(y, validataion_history)
 
-        # self.load_weights("./models/q3_weights.model")
+        self.load_weights("./models/q3_weights.model")
         for epoch in range(self.max_iterations):
             prediction = self.forward(X_train[:, 1:])
             dw, db = self.backward(X_train[:, 1:], trainingLabels)
@@ -322,5 +322,6 @@ class PerceptronPacman:
 
         self.weights, self.biases =  weights, biases  
         modified_list = [x - 1 for x in self.features_to_use[1:]]
+        print(self.weights[0].shape)
         self.weights[0] = self.weights[0][modified_list, :]
 
