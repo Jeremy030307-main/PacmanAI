@@ -60,7 +60,7 @@ class PerceptronPacman:
         # a list of the indices for the features that should be used. We always include 0 for the bias term.
         self.features_to_use = [0] + [feature_name_to_idx[feature_name] for feature_name in feature_names_to_use]
 
-        hidden_sizes = [19, 19]
+        hidden_sizes = [18]
         input_size = len(feature_names_to_use)
         output_size = 1
 
@@ -89,9 +89,6 @@ class PerceptronPacman:
             fan_in = input_size
             self.weights.append(np.random.randn(input_size, output_size) * np.sqrt(2.0 / fan_in))
             self.biases.append(np.zeros((1, output_size)))
-
-        self.reg_lambda = 0.01
-        self.dropout_rate = 0.2
 
     def activationHidden(self, x):
         """
@@ -141,15 +138,15 @@ class PerceptronPacman:
         
         output_d = output_error * sigmoid_derivative
 
-        dw = [ (2/m) * np.array(np.dot(self.activation[-2].T, output_d.T))]  # Weights for output layer
-        db = [ (2/m) * np.sum(output_d) ] 
+        dw = [ (2/m) * np.array(np.dot(self.activation[-2].T, output_d.T)) / m]  # Weights for output layer
+        db = [ (2/m) * np.sum(output_d) / m ] 
 
         # backward pass for hidden layer (if any)
         for i in range(len(self.weights)-1, 0, -1):
             error = np.dot(self.weights[i], np.array(output_d))
             hidden_d = error * self.gradientHidden(self.activation[i].T)
-            dw.append( (2/m) * np.dot(self.activation[i-1].T, hidden_d.T))
-            db.append((2/m) * np.sum(hidden_d))
+            dw.append(  np.dot(self.activation[i-1].T, hidden_d.T) / m)
+            db.append(np.sum(hidden_d) / m)
 
             output_d = hidden_d
         
@@ -201,11 +198,6 @@ class PerceptronPacman:
             # test on validation data
             validate_predict = self.forward(X_validate[:, 1:])
             validate_mse = np.mean((validationLabels - validate_predict.T[0]) ** 2)  
-
-        #     if counter == self.max_iterations/8:
-        #         # self.learning_rate -= 0.1
-        #         # counter = 0
-        #         print(self.learning_rate)
 
         #     y.append(epoch)
         #     mse_history.append(mse)
