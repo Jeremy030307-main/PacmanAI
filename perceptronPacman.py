@@ -60,7 +60,7 @@ class PerceptronPacman:
         # a list of the indices for the features that should be used. We always include 0 for the bias term.
         self.features_to_use = [0] + [feature_name_to_idx[feature_name] for feature_name in feature_names_to_use]
 
-        hidden_sizes = [64,32]
+        hidden_sizes = [19, 19]
         input_size = len(feature_names_to_use)
         output_size = 1
 
@@ -181,6 +181,7 @@ class PerceptronPacman:
         X_train: np.ndarray = trainingData[:, self.features_to_use]
         X_validate = validationData[:, self.features_to_use]
 
+        # counter = 0
         # y = []
         # mse_history = []
         # validataion_history = []
@@ -189,7 +190,7 @@ class PerceptronPacman:
         # line1, = ax1.plot(y, mse_history)
         # line2, = ax2.plot(y, validataion_history)
 
-        self.load_weights("./models/q3_weights.model")
+        # self.load_weights("./models/q3_weights.model")
         for epoch in range(self.max_iterations):
             prediction = self.forward(X_train[:, 1:])
             dw, db = self.backward(X_train[:, 1:], trainingLabels)
@@ -200,6 +201,11 @@ class PerceptronPacman:
             # test on validation data
             validate_predict = self.forward(X_validate[:, 1:])
             validate_mse = np.mean((validationLabels - validate_predict.T[0]) ** 2)  
+
+        #     if counter == self.max_iterations/8:
+        #         # self.learning_rate -= 0.1
+        #         # counter = 0
+        #         print(self.learning_rate)
 
         #     y.append(epoch)
         #     mse_history.append(mse)
@@ -219,6 +225,8 @@ class PerceptronPacman:
 
         #     fig.canvas.draw()
         #     fig.canvas.flush_events()
+
+        #     counter += 1
     
         # plt.ioff()
         # plt.show()
