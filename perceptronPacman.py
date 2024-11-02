@@ -37,9 +37,9 @@ class PerceptronPacman:
             'closestFoodNow',
             'closestGhost',
             'closestGhostNow',
-            # 'closestScaredGhost',
+            'closestScaredGhost',
             'closestScaredGhostNow',
-            'eatenByGhost',
+            # 'eatenByGhost',
             'eatsCapsule',
             'eatsFood',
             "foodCount",
@@ -60,7 +60,7 @@ class PerceptronPacman:
         # a list of the indices for the features that should be used. We always include 0 for the bias term.
         self.features_to_use = [0] + [feature_name_to_idx[feature_name] for feature_name in feature_names_to_use]
 
-        hidden_sizes = [19]
+        hidden_sizes = [13]
         input_size = len(feature_names_to_use)
         output_size = 1
 
@@ -187,8 +187,12 @@ class PerceptronPacman:
         validataion_history = []
         plt.ion()
         fig, (ax1, ax2) = plt.subplots(1,2,figsize=(10,5))
+
         line1, = ax1.plot(y, mse_history)
         line2, = ax2.plot(y, validataion_history)
+
+        ax1.set_title('Mean Squared Error (MSE) Over Epochs')  # Title for the first subplot
+        ax2.set_title('Validation Error Over Epochs') 
 
         # self.load_weights("./models/q3_weights.model")
         for epoch in range(self.max_iterations):
@@ -201,11 +205,6 @@ class PerceptronPacman:
             # test on validation data
             validate_predict = self.forward(X_validate[:, 1:])
             validate_mse = np.mean((validationLabels - validate_predict.T[0]) ** 2)  
-            validate_mse = -np.mean(validationLabels * np.log(validate_predict.T[0]) + (1 - validationLabels) * np.log(1 - validate_predict.T[0]))
-            if counter == self.max_iterations/8:
-                # self.learning_rate -= 0.1
-                # counter = 0
-                print(self.learning_rate)
 
             y.append(epoch)
             mse_history.append(mse)
@@ -244,33 +243,11 @@ class PerceptronPacman:
             vector_to_classify = feature_vector
 
         predictions = self.forward(vector_to_classify[1:])
-        # value = 0
-        # if predictions < 0.1:
-        #     value = 1
-        # elif predictions >= 0.1 and predictions < 0.2:
-        #     value = 2
-        # elif predictions >= 0.2 and predictions < 0.3:
-        #     value = 3
-        # elif predictions >= 0.3 and predictions < 0.4:
-        #     value = 4
-        # elif predictions >= 0.4 and predictions < 0.5:
-        #     value = 5
-        # elif predictions >= 0.5 and predictions < 0.6:
-        #     value = 6
-        # elif predictions >= 0.6 and predictions < 0.7:
-        #     value = 7
-        # elif predictions >= 0.7 and predictions < 0.8:
-        #     value = 8
-        # elif predictions >= 0.8 and predictions < 0.9:
-        #     value = 9
-        # else:
-        #     value = 10
-        
+
         if feature_vector[7] == 1:
-            return round(predictions[0][0], 4) * 0.001
+            return -100
         
         return round(predictions[0][0], 4)
-        # return 1 if predictions > 0.3 else 0
 
     def evaluate(self, data, labels):
         """
@@ -356,5 +333,5 @@ class PerceptronPacman:
                 biases.append(np.array(layer_biases))
 
         self.weights, self.biases =  weights, biases 
-        modified_list = [x - 1 for x in self.features_to_use[1:]]
-        self.weights[0] = self.weights[0][modified_list, :] 
+        # modified_list = [x - 1 for x in self.features_to_use[1:]]
+        # self.weights[0] = self.weights[0][modified_list, :] 
