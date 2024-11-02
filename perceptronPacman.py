@@ -267,9 +267,9 @@ class PerceptronPacman:
         #     value = 10
         
         if feature_vector[7] == 1:
-            return round(predictions[0][0], 4) * 0.001
+            return round(predictions[0][0], 2) * 0.001
         
-        return round(predictions[0][0], 4)
+        return round(predictions[0][0], 2)
         # return 1 if predictions > 0.3 else 0
 
     def evaluate(self, data, labels):
