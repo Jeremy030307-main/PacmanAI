@@ -90,6 +90,9 @@ class PerceptronPacman:
             self.weights.append(np.random.randn(input_size, output_size) * np.sqrt(2.0 / fan_in))
             self.biases.append(np.zeros((1, output_size)))
 
+        self.reg_lambda = 0.01
+        self.dropout_rate = 0.2
+
     def activationHidden(self, x):
         """
         Implement your chosen activation function for any hidden layers here.
@@ -138,15 +141,15 @@ class PerceptronPacman:
         
         output_d = output_error * sigmoid_derivative
 
-        dw = [ (2/m) * np.array(np.dot(self.activation[-2].T, output_d.T)) / m]  # Weights for output layer
-        db = [ (2/m) * np.sum(output_d) / m ] 
+        dw = [ (2/m) * np.array(np.dot(self.activation[-2].T, output_d.T))]  # Weights for output layer
+        db = [ (2/m) * np.sum(output_d) ] 
 
         # backward pass for hidden layer (if any)
         for i in range(len(self.weights)-1, 0, -1):
             error = np.dot(self.weights[i], np.array(output_d))
             hidden_d = error * self.gradientHidden(self.activation[i].T)
-            dw.append(  np.dot(self.activation[i-1].T, hidden_d.T) / m)
-            db.append(np.sum(hidden_d) / m)
+            dw.append( (2/m) * np.dot(self.activation[i-1].T, hidden_d.T))
+            db.append((2/m) * np.sum(hidden_d))
 
             output_d = hidden_d
         
@@ -178,16 +181,16 @@ class PerceptronPacman:
         X_train: np.ndarray = trainingData[:, self.features_to_use]
         X_validate = validationData[:, self.features_to_use]
 
-        # counter = 0
-        # y = []
-        # mse_history = []
-        # validataion_history = []
-        # plt.ion()
-        # fig, (ax1, ax2) = plt.subplots(1,2,figsize=(10,5))
-        # line1, = ax1.plot(y, mse_history)
-        # line2, = ax2.plot(y, validataion_history)
+        counter = 0
+        y = []
+        mse_history = []
+        validataion_history = []
+        plt.ion()
+        fig, (ax1, ax2) = plt.subplots(1,2,figsize=(10,5))
+        line1, = ax1.plot(y, mse_history)
+        line2, = ax2.plot(y, validataion_history)
 
-        self.load_weights("./models/q3_weights.model")
+        # self.load_weights("./models/q3_weights.model")
         for epoch in range(self.max_iterations):
             prediction = self.forward(X_train[:, 1:])
             dw, db = self.backward(X_train[:, 1:], trainingLabels)
@@ -198,30 +201,35 @@ class PerceptronPacman:
             # test on validation data
             validate_predict = self.forward(X_validate[:, 1:])
             validate_mse = np.mean((validationLabels - validate_predict.T[0]) ** 2)  
+            validate_mse = -np.mean(validationLabels * np.log(validate_predict.T[0]) + (1 - validationLabels) * np.log(1 - validate_predict.T[0]))
+            if counter == self.max_iterations/8:
+                # self.learning_rate -= 0.1
+                # counter = 0
+                print(self.learning_rate)
 
-        #     y.append(epoch)
-        #     mse_history.append(mse)
-        #     validataion_history.append(validate_mse)
+            y.append(epoch)
+            mse_history.append(mse)
+            validataion_history.append(validate_mse)
 
-        #     line1.set_xdata(y)
-        #     line1.set_ydata(mse_history)
-        #     ax1.relim()
-        #     ax1.grid(True)
-        #     ax1.autoscale_view()
+            line1.set_xdata(y)
+            line1.set_ydata(mse_history)
+            ax1.relim()
+            ax1.grid(True)
+            ax1.autoscale_view()
 
-        #     line2.set_xdata(y)
-        #     line2.set_ydata(validataion_history)
-        #     ax2.relim()
-        #     ax2.grid(True)
-        #     ax2.autoscale_view()
+            line2.set_xdata(y)
+            line2.set_ydata(validataion_history)
+            ax2.relim()
+            ax2.grid(True)
+            ax2.autoscale_view()
 
-        #     fig.canvas.draw()
-        #     fig.canvas.flush_events()
+            fig.canvas.draw()
+            fig.canvas.flush_events()
 
-        #     counter += 1
+            counter += 1
     
-        # plt.ioff()
-        # plt.show()
+        plt.ioff()
+        plt.show()
 
     def predict(self, feature_vector):
         """
@@ -236,7 +244,33 @@ class PerceptronPacman:
             vector_to_classify = feature_vector
 
         predictions = self.forward(vector_to_classify[1:])
-        return predictions
+        # value = 0
+        # if predictions < 0.1:
+        #     value = 1
+        # elif predictions >= 0.1 and predictions < 0.2:
+        #     value = 2
+        # elif predictions >= 0.2 and predictions < 0.3:
+        #     value = 3
+        # elif predictions >= 0.3 and predictions < 0.4:
+        #     value = 4
+        # elif predictions >= 0.4 and predictions < 0.5:
+        #     value = 5
+        # elif predictions >= 0.5 and predictions < 0.6:
+        #     value = 6
+        # elif predictions >= 0.6 and predictions < 0.7:
+        #     value = 7
+        # elif predictions >= 0.7 and predictions < 0.8:
+        #     value = 8
+        # elif predictions >= 0.8 and predictions < 0.9:
+        #     value = 9
+        # else:
+        #     value = 10
+        
+        if feature_vector[7] == 1:
+            return round(predictions[0][0], 4) * 0.001
+        
+        return round(predictions[0][0], 4)
+        # return 1 if predictions > 0.3 else 0
 
     def evaluate(self, data, labels):
         """
@@ -258,7 +292,8 @@ class PerceptronPacman:
         X_eval = data[:, self.features_to_use]
 
         predictions = self.forward(X_eval[:, 1:])
-        loss = np.mean((predictions.T[0] - labels) ** 2) # mean square error
+        # loss = np.mean((predictions.T[0] - labels) ** 2) # mean square error
+        loss = -np.mean(labels * np.log(predictions.T[0]) + (1 - labels) * np.log(1 - predictions.T[0]))
         return loss
 
     def save_weights(self, weights_path):
@@ -320,8 +355,6 @@ class PerceptronPacman:
             if layer_biases:
                 biases.append(np.array(layer_biases))
 
-        self.weights, self.biases =  weights, biases  
+        self.weights, self.biases =  weights, biases 
         modified_list = [x - 1 for x in self.features_to_use[1:]]
-        print(self.weights[0].shape)
-        self.weights[0] = self.weights[0][modified_list, :]
-
+        self.weights[0] = self.weights[0][modified_list, :] 
