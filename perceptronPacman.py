@@ -37,7 +37,7 @@ class PerceptronPacman:
             'closestFoodNow',
             'closestGhost',
             'closestGhostNow',
-            'closestScaredGhost',
+            # 'closestScaredGhost',
             'closestScaredGhostNow',
             'eatenByGhost',
             'eatsCapsule',
