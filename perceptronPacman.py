@@ -35,11 +35,11 @@ class PerceptronPacman:
         feature_names_to_use = [
             'closestFood', 
             'closestFoodNow',
-            'closestGhost',
+            # 'closestGhost',
             'closestGhostNow',
-            'closestScaredGhost',
+            # 'closestScaredGhost',
             'closestScaredGhostNow',
-            # 'eatenByGhost',
+            'eatenByGhost',
             'eatsCapsule',
             'eatsFood',
             "foodCount",
@@ -49,7 +49,7 @@ class PerceptronPacman:
             'furthestFood', 
             'numberAvailableActions',
             "ratioCapsuleDistance",
-            "ratioFoodDistance",
+            # "ratioFoodDistance",
             "ratioGhostDistance",
             "ratioScaredGhostDistance"
             ]
@@ -60,7 +60,7 @@ class PerceptronPacman:
         # a list of the indices for the features that should be used. We always include 0 for the bias term.
         self.features_to_use = [0] + [feature_name_to_idx[feature_name] for feature_name in feature_names_to_use]
 
-        hidden_sizes = [13]
+        hidden_sizes = [19]
         input_size = len(feature_names_to_use)
         output_size = 1
 
@@ -89,9 +89,6 @@ class PerceptronPacman:
             fan_in = input_size
             self.weights.append(np.random.randn(input_size, output_size) * np.sqrt(2.0 / fan_in))
             self.biases.append(np.zeros((1, output_size)))
-
-        self.reg_lambda = 0.01
-        self.dropout_rate = 0.2
 
     def activationHidden(self, x):
         """
@@ -164,6 +161,15 @@ class PerceptronPacman:
             self.weights[i] -= self.learning_rate * dw[i]
             self.biases[i] -= self.learning_rate * db[i]
 
+    def cyclic_learning_rate(self, iteration, base_lr, max_lr, step_size):
+        # Compute the cycle (2 * step_size)
+        cycle = np.floor(1 + iteration / (2 * step_size))
+        # Compute x (the relative position within the cycle)
+        x = np.abs(iteration / step_size - 2 * cycle + 1)
+        # Compute the learning rate
+        lr = base_lr + (max_lr - base_lr) * np.maximum(0, (1 - x))
+        return lr
+
     def train(self, trainingData, trainingLabels, validationData, validationLabels):
         """
         This function should take training and validation data sets and train the perceptron
@@ -181,8 +187,9 @@ class PerceptronPacman:
         X_train: np.ndarray = trainingData[:, self.features_to_use]
         X_validate = validationData[:, self.features_to_use]
 
-        counter = 0
+        # counter = 0
         y = []
+        rates = []
         mse_history = []
         validataion_history = []
         plt.ion()
@@ -192,10 +199,12 @@ class PerceptronPacman:
         line2, = ax2.plot(y, validataion_history)
 
         ax1.set_title('Mean Squared Error (MSE) Over Epochs')  # Title for the first subplot
-        ax2.set_title('Validation Error Over Epochs') 
+        ax2.set_title('LR Range Test (Loss Over Learning Rate)') 
 
         # self.load_weights("./models/q3_weights.model")
         for epoch in range(self.max_iterations):
+
+            # self.learning_rate = self.cyclic_learning_rate(epoch, 0.1, 0.9, 50)
             prediction = self.forward(X_train[:, 1:])
             dw, db = self.backward(X_train[:, 1:], trainingLabels)
             self.update_weights(dw,db) 
@@ -225,10 +234,9 @@ class PerceptronPacman:
             fig.canvas.draw()
             fig.canvas.flush_events()
 
-            counter += 1
-    
         plt.ioff()
         plt.show()
+        return mse_history[-1]
 
     def predict(self, feature_vector):
         """
@@ -269,8 +277,7 @@ class PerceptronPacman:
         X_eval = data[:, self.features_to_use]
 
         predictions = self.forward(X_eval[:, 1:])
-        # loss = np.mean((predictions.T[0] - labels) ** 2) # mean square error
-        loss = -np.mean(labels * np.log(predictions.T[0]) + (1 - labels) * np.log(1 - predictions.T[0]))
+        loss = np.mean((predictions.T[0] - labels) ** 2) # mean square error
         return loss
 
     def save_weights(self, weights_path):
